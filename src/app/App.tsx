@@ -1,31 +1,35 @@
-import React, { useState } from 'react';
-import { MainMenu } from './components/MainMenu';
-import { GameEngine } from './components/GameEngine';
-import { SaveLoadMenu } from './components/SaveLoadMenu';
-import { Gallery } from './components/Gallery';
-import { SettingsMenu } from './components/SettingsMenu';
-import { saveSystem } from './utils/saveSystem';
-import { gameMetadata } from './data/story';
-import { GameState } from './types/game';
+import React, { useState } from "react";
+import { MainMenu } from "./components/MainMenu";
+import { GameEngine } from "./components/GameEngine";
+import { SaveLoadMenu } from "./components/SaveLoadMenu";
+import { Gallery } from "./components/Gallery";
+import { SettingsMenu } from "./components/SettingsMenu";
+import { saveSystem } from "./utils/saveSystem";
+import { gameMetadata } from "./data/story";
+import { GameState } from "./types/game";
 
-type Screen = 'menu' | 'game' | 'load' | 'gallery' | 'settings';
+type Screen = "menu" | "game" | "load" | "gallery" | "settings";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('menu');
-  const [loadedState, setLoadedState] = useState<GameState | undefined>();
-  const [settings, setSettings] = useState(saveSystem.loadSettings());
+  const [screen, setScreen] = useState<Screen>("menu");
+  const [loadedState, setLoadedState] = useState<
+    GameState | undefined
+  >();
+  const [settings, setSettings] = useState(
+    saveSystem.loadSettings(),
+  );
 
   const quickSave = saveSystem.quickLoad();
 
   const handleNewGame = () => {
     setLoadedState(undefined);
-    setScreen('game');
+    setScreen("game");
   };
 
   const handleContinue = () => {
     if (quickSave) {
       setLoadedState(quickSave.state);
-      setScreen('game');
+      setScreen("game");
     }
   };
 
@@ -33,7 +37,7 @@ export default function App() {
     const saveData = saveSystem.loadGame(slot);
     if (saveData) {
       setLoadedState(saveData.state);
-      setScreen('game');
+      setScreen("game");
     }
   };
 
@@ -44,7 +48,7 @@ export default function App() {
   const handleSettingsSave = (newSettings: typeof settings) => {
     setSettings(newSettings);
     saveSystem.saveSettings(newSettings);
-    setScreen('menu');
+    setScreen("menu");
   };
 
   // 获取所有解锁的CG（从所有存档中收集）
@@ -61,43 +65,50 @@ export default function App() {
 
   return (
     <>
-      {screen === 'menu' && (
+      {screen === "menu" && (
         <MainMenu
           onNewGame={handleNewGame}
           onContinue={handleContinue}
-          onLoad={() => setScreen('load')}
-          onGallery={() => setScreen('gallery')}
-          onSettings={() => setScreen('settings')}
+          onLoad={() => setScreen("load")}
+          onGallery={() => setScreen("gallery")}
+          onSettings={() => setScreen("settings")}
           hasSave={!!quickSave}
         />
       )}
 
-      {screen === 'game' && (
+      {screen === "game" && (
         <GameEngine
-          onReturnToMenu={() => setScreen('menu')}
-          startNode={loadedState ? loadedState.currentNodeId : gameMetadata.startNode}
+          onReturnToMenu={() => setScreen("menu")}
+          startNode={
+            loadedState
+              ? loadedState.currentNodeId
+              : gameMetadata.startNode
+          }
           loadedState={loadedState}
         />
       )}
 
-      {screen === 'load' && (
+      {screen === "load" && (
         <SaveLoadMenu
           mode="load"
           saves={saveSystem.getAllSaves()}
-          onClose={() => setScreen('menu')}
+          onClose={() => setScreen("menu")}
           onLoad={handleLoad}
           onDelete={handleDeleteSave}
         />
       )}
 
-      {screen === 'gallery' && (
-        <Gallery unlockedCGs={getAllUnlockedCGs()} onClose={() => setScreen('menu')} />
+      {screen === "gallery" && (
+        <Gallery
+          unlockedCGs={getAllUnlockedCGs()}
+          onClose={() => setScreen("menu")}
+        />
       )}
 
-      {screen === 'settings' && (
+      {screen === "settings" && (
         <SettingsMenu
           settings={settings}
-          onClose={() => setScreen('menu')}
+          onClose={() => setScreen("menu")}
           onSave={handleSettingsSave}
         />
       )}
