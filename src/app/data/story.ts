@@ -37,71 +37,288 @@ export const characters: Record<string, Character> = {
 
 // 故事节点
 export const storyNodes: Record<string, DialogueNode> = {
-  // ========== 开场 ==========
+  // ========== 开场 (新脚本) ==========
   start: {
     id: 'start',
     type: 'scene',
-    background: 'https://images.unsplash.com/photo-1505zcz-96953b982615?w=1200',
-    text: '意识逐渐清醒...',
+    background: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200', // Very dark/black placeholder
+    text: '…\n………\n滴答，滴答。\n远处不断传来水滴下形成的声音。',
     next: 'intro_1',
   },
 
   intro_1: {
     id: 'intro_1',
     type: 'dialogue',
-    character: 'wanhui',
-    text: '...这是哪里？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
+    character: 'narrator',
+    text: '我渐渐找回了自己的意识。\n该醒过来了。',
     next: 'intro_2',
   },
 
   intro_2: {
     id: 'intro_2',
     type: 'dialogue',
-    character: 'narrator',
-    text: '你醒来时发现自己躺在一个昏暗的房间里。\n四周空荡荡的，只有墙角处有一扇金属电梯门。',
+    character: 'wanhui',
+    text: '…',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
     next: 'intro_3',
   },
 
   intro_3: {
     id: 'intro_3',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '我...我怎么会在这里？\n我记得我明明在学校...',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
+    type: 'scene',
+    // 插入场景-正对着电梯门的视角
+    background: 'https://images.unsplash.com/photo-1599053605002-eca7a37d246f?w=1200',
+    character: 'narrator',
+    text: '我睁开眼睛。',
     next: 'intro_4',
   },
 
   intro_4: {
     id: 'intro_4',
     type: 'dialogue',
-    character: 'narrator',
-    text: '电梯门突然发出"叮"的一声，缓缓打开。\n里面漆黑一片，但你听到了一个声音。',
+    character: 'wanhui',
+    text: '这里是…？',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
     next: 'intro_5',
   },
 
   intro_5: {
     id: 'intro_5',
     type: 'dialogue',
-    character: 'voice',
-    text: '进来吧，万辉。',
+    character: 'narrator',
+    text: '这是一个谈得上昏暗但不失整洁的房间。\n四周空荡荡的，说不上是金属还是混凝土的材质映着你孤零零的身影。\n不远处有一扇金属大门。',
     next: 'intro_6',
   },
 
   intro_6: {
     id: 'intro_6',
     type: 'dialogue',
-    character: 'wanhui',
-    text: '你...你是谁？你怎么知道我的名字？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
+    character: 'narrator',
+    text: '我眨了眨眼。',
     next: 'intro_7',
   },
 
   intro_7: {
     id: 'intro_7',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '我怎么会在这里？\n我记得我明明在路上…',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'intro_8',
+  },
+
+  intro_8: {
+    id: 'intro_8',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '滴水声还在继续。我下意识寻找声音的源头。',
+    next: 'intro_9',
+  },
+
+  intro_9: {
+    id: 'intro_9',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '…欸？',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'intro_10',
+  },
+
+  intro_10: {
+    id: 'intro_10',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '…这个房间除了门什么都没有。',
+    next: 'intro_11',
+  },
+
+  intro_11: {
+    id: 'intro_11',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '也许是隔音太差了…\n…\n看着这么新，漏水也太厉害了吧？！',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'intro_12',
+  },
+
+  intro_12: {
+    id: 'intro_12',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '停止胡思乱想，我开始思考自己为什么会来到这里。\n被绑架了？自己平时并没有惹上什么麻烦…\n…需要报警吗？',
+    next: 'intro_13',
+  },
+
+  intro_13: {
+    id: 'intro_13',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '…啊！\n这么一说，手机就在我身上。',
+    next: 'intro_14',
+  },
+
+  intro_14: {
+    id: 'intro_14',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '（掏掏）\n……\n…完全没信号。',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'intro_15',
+  },
+
+  intro_15: {
+    id: 'intro_15',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '我沮丧地收起手机。\n也许会有人注意到自己的失踪？\n到底为什么要盯上我呢…真是倒霉啊…',
+    next: 'intro_16',
+  },
+
+  intro_16: {
+    id: 'intro_16',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '一直这样等着也不是什么好主意…调查一下周围吧。',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'investigate_menu',
+  },
+
+  // ========== 调查阶段 ==========
+  investigate_menu: {
+    id: 'investigate_menu',
+    type: 'choice',
+    text: '调查一下周围吧。',
+    choices: [
+      {
+        text: '【墙壁】',
+        next: 'look_wall',
+      },
+      {
+        text: '【墙角】',
+        next: 'look_corner',
+      },
+      {
+        text: '【可疑的大门】',
+        next: 'look_door',
+      },
+    ],
+  },
+
+  look_wall: {
+    id: 'look_wall',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '盯着墙壁上的倒影看了好一会。',
+    next: 'look_wall_2',
+  },
+  look_wall_2: {
+    id: 'look_wall_2',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '好厉害…像镜子一样。',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'look_wall_3',
+  },
+  look_wall_3: {
+    id: 'look_wall_3',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '你笑了笑。',
+    next: 'investigate_menu', // 循环回到菜单
+  },
+
+  look_corner: {
+    id: 'look_corner',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '嗯…应该没有机关。\n会有才怪了吧…',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'investigate_menu', // 循环回到菜单
+  },
+
+  look_door: {
+    id: 'look_door',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '这个…完全没看到机关呢。\n可恶…明明是唯一的线索…\n嗯…？',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'door_event_1',
+  },
+
+  door_event_1: {
+    id: 'door_event_1',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '大门轻微颤了颤，像是要打开。',
+    next: 'door_event_2',
+  },
+
+  door_event_2: {
+    id: 'door_event_2',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '！？',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'door_event_3',
+  },
+
+  door_event_3: {
+    id: 'door_event_3',
+    type: 'scene',
+    // 切换场景-电梯门打开
+    background: 'https://images.unsplash.com/photo-1631530940388-cc5519a4dd58?w=1200',
+    character: 'narrator',
+    text: '我后退了两步。\n一阵尖锐的声音响起，两扇铁片缓缓向两边滑动。\n原来是电梯啊。\n门完全打开了。',
+    next: 'elevator_open_scene',
+  },
+
+  elevator_open_scene: {
+    id: 'elevator_open_scene',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '里面漆黑一片。\n不知为何，我的脚像是被胶水紧紧粘在了地板上；我想要鼓起勇气发出声音，但某种本能完全压制了我的自主行动。',
+    next: 'elevator_open_2',
+  },
+
+  elevator_open_2: {
+    id: 'elevator_open_2',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '黑暗里传来的气息让我动弹不得。\n现在转身逃跑当然不是明智的选择。\n那我该干什么…？',
+    next: 'intro_voice_reveal', // 连接到原有的剧情逻辑
+  },
+
+  intro_voice_reveal: {
+    id: 'intro_voice_reveal',
+    type: 'dialogue',
+    character: 'voice',
+    text: '进来吧，万辉。',
+    next: 'intro_6_old',
+  },
+
+  intro_6_old: {
+    id: 'intro_6_old',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '你...你是谁？你怎么知道我的名字？',
+    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    characterPosition: 'center',
+    next: 'intro_7_old',
+  },
+
+  intro_7_old: {
+    id: 'intro_7_old',
     type: 'dialogue',
     character: 'voice',
     text: '我是谁并不重要。\n重要的是...你想离开这里吗？',
@@ -175,7 +392,7 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'scene',
     background: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=1200',
     character: 'narrator',
-    text: '【第9层】\n\n电梯门打开，眼前是一条长长的走廊。\n走廊尽头有一面巨大的镜子。',
+    text: '【第9层】\n\n电梯门打开，眼前是一个长长的走廊。\n走廊尽头有一面巨大的镜子。',
     next: 'floor_9_1',
   },
 
@@ -752,7 +969,7 @@ export const storyNodes: Record<string, DialogueNode> = {
     background: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',
     cg: 'https://images.unsplash.com/photo-1469173479606-ada03df615aa?w=1200',
     character: 'narrator',
-    text: '你穿过了���子。\n\n在镜中世界，万辉成为了殷玉的协助者。\n他引导着迷失的灵魂，帮助他们找到归宿。\n\n虽然失去了原本的生活...\n但在这里，他找到了新的意义。\n\n【真结局：镜中的死神】',
+    text: '你穿过了镜子。\n\n在镜中世界，万辉成为了殷玉的协助者。\n他引导着迷失的灵魂，帮助他们找到归宿。\n\n虽然失去了原本的生活...\n但在这里，他找到了新的意义。\n\n【真结局：镜中的死神】',
     flag: 'ending_true',
   },
 };
