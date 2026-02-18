@@ -16,7 +16,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: './',
+  // IMPORTANT: Set this to match your repository name
+  // If your repo is https://github.com/user/my-game, set base to '/my-game/'
+  base: '/Game/',
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
