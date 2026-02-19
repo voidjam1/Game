@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Game
 
 on:
   push:
@@ -14,6 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 任务1：构建游戏
   build:
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # 注意：这里我们故意删掉了 cache: 'npm' 这一行，彻底解决报错！
+          # 这里没有 cache 设置，所以绝对不会报 "lock file not found" 错误！
 
       - name: Install dependencies
         run: npm install
@@ -32,14 +33,12 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
+  # 任务2：部署到网页
   deploy:
     environment:
       name: github-pages
