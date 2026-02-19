@@ -35,14 +35,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           <motion.div
             key={i}
             className="absolute w-2 h-2 bg-white rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
             initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
               opacity: Math.random() * 0.5,
             }}
             animate={{
-              y: [null, Math.random() * window.innerHeight],
-              opacity: [null, Math.random() * 0.5],
+              y: [0, Math.random() * 100 - 50],
+              opacity: [Math.random() * 0.5, 0, Math.random() * 0.5],
             }}
             transition={{
               duration: Math.random() * 10 + 10,

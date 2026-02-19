@@ -19,6 +19,17 @@ export default defineConfig({
   // IMPORTANT: Set this to match your repository name
   // If your repo is https://github.com/user/my-game, set base to '/my-game/'
   base: '/Game/',
+  
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],

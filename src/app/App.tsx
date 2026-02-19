@@ -4,6 +4,7 @@ import { GameEngine } from "./components/GameEngine";
 import { SaveLoadMenu } from "./components/SaveLoadMenu";
 import { Gallery } from "./components/Gallery";
 import { SettingsMenu } from "./components/SettingsMenu";
+import { DebugInfo } from "./components/DebugInfo";
 import { saveSystem } from "./utils/saveSystem";
 import { gameMetadata } from "./data/story";
 import { GameState } from "./types/game";
@@ -65,6 +66,7 @@ export default function App() {
 
   return (
     <>
+      <DebugInfo />
       {screen === "menu" && (
         <MainMenu
           onNewGame={handleNewGame}
