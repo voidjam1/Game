@@ -53,9 +53,13 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   const [showHistory, setShowHistory] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
 
-  // === 新增：打字机 & 头像状态 ===
-  const [displayedText, setDisplayedText] = useState('');
-  const [rightChar, setRightChar] = useState<Character | null>(null);
+  // === 核心状态：打字机、分行、头像 ===
+  const [displayedText, setDisplayedText] = useState(''); // 当前屏幕上显示的字
+  const [rightChar, setRightChar] = useState<Character | null>(null); // 配角立绘
+  
+  // === 新增：分行控制状态 ===
+  const [subLines, setSubLines] = useState<string[]>([]); // 当前节点拆分后的所有行
+  const [subLineIndex, setSubLineIndex] = useState(0);    // 当前正在显示第几行
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,52 +67,87 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   const currentNode = storyNodes[gameState.currentNodeId];
 
   // ==========================================
-  // 核心逻辑 1: 处理节点变化 & 打字机
+  // 核心逻辑 1: 节点初始化 (拆分文本)
   // ==========================================
   useEffect(() => {
     if (!currentNode) return;
 
-    setDisplayedText('');
-    
+    // 1. 更新 CG 和 结局解锁 (保持不变)
     if (currentNode.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
       setGameState((prev) => ({ ...prev, unlockedCGs: [...prev.unlockedCGs, currentNode.cg!] }));
     }
-
     if (currentNode.type === 'ending' && currentNode.flag && !gameState.unlockedEndings.includes(currentNode.flag)) {
       setGameState((prev) => ({ ...prev, unlockedEndings: [...prev.unlockedEndings, currentNode.flag!] }));
     }
 
+    // 2. 更新右侧立绘
     if (currentNode.character && currentNode.character !== 'narrator' && currentNode.character !== 'wanhui') {
       const char = characters[currentNode.character];
       if (char) setRightChar(char);
     }
 
+    // 3. 【关键修改】拆分文本
+    // 如果是选项或结局，不拆分，直接当做一行
+    if (currentNode.type === 'choice' || currentNode.type === 'ending') {
+      setSubLines([currentNode.text || '']);
+    } else {
+      // 按照换行符 \n 拆分，并且过滤掉完全空白的行（可选）
+      const rawText = currentNode.text || '';
+      const lines = rawText.split('\n'); 
+      // 如果你想保留空行作为一个停顿，就直接用 split('\n')
+      // 如果你想去掉空行，可以用 .filter(line => line.trim() !== '')
+      setSubLines(lines.length > 0 ? lines : ['']);
+    }
+    
+    // 重置到第一行
+    setSubLineIndex(0);
+    setDisplayedText('');
+
+  }, [currentNode, gameState.currentNodeId]);
+
+
+  // ==========================================
+  // 核心逻辑 2: 打字机效果 (针对每一行)
+  // ==========================================
+  useEffect(() => {
+    if (!currentNode || subLines.length === 0) return;
+
+    // 获取当前要显示的那一行文字
+    const targetText = subLines[subLineIndex] || '';
+
+    // 清理旧的计时器
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
 
     let currentIndex = 0;
-    const fullText = currentNode.text || '';
-    // --- 修改点：速度变慢 (原30 -> 现80，数值越大越慢) ---
-    const speed = 80; 
+    const speed = 80; // 打字速度
 
+    // 定义打字函数
     const typeChar = () => {
-      if (currentIndex < fullText.length) {
-        setDisplayedText(fullText.slice(0, currentIndex + 1));
+      // 如果当前显示的字还没达到目标长度
+      if (currentIndex < targetText.length) {
+        setDisplayedText(targetText.slice(0, currentIndex + 1));
         currentIndex++;
         typingTimeoutRef.current = setTimeout(typeChar, speed);
       } else {
+        // === 这一行打完了 ===
+        
+        // 如果开启了自动播放
         if (isAutoPlay && currentNode.type !== 'choice' && currentNode.type !== 'ending') {
           const delay = (11 - settings.autoSpeed) * 500;
           autoPlayTimeoutRef.current = setTimeout(() => {
-            handleNext();
-          }, Math.max(delay, 1000)); // 自动播放至少停1秒
+            handleNext(); // 自动触发下一步
+          }, Math.max(delay, 1000));
         }
       }
     };
 
+    // 如果是选项或结局，直接显示（不打字）
     if (currentNode.type === 'choice' || currentNode.type === 'ending') {
-      setDisplayedText(fullText);
+      setDisplayedText(targetText);
     } else {
+      // 开始打字前先清空，防止上一句残留
+      setDisplayedText(''); 
       typeChar();
     }
 
@@ -116,22 +155,34 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
     };
-
-  }, [currentNode, gameState.currentNodeId]);
+  }, [subLines, subLineIndex, isAutoPlay, currentNode, settings.autoSpeed]); // 依赖 subLineIndex 变化
 
 
   // ==========================================
-  // 核心逻辑 2: 交互处理
+  // 核心逻辑 3: 点击交互 (下一句/下一节点)
   // ==========================================
   const handleNext = useCallback(() => {
-    if (!currentNode) return;
+    if (!currentNode || subLines.length === 0) return;
 
-    if (displayedText.length < (currentNode.text?.length || 0) && currentNode.type !== 'choice') {
+    const targetText = subLines[subLineIndex] || '';
+
+    // 1. 如果还在打字，瞬间显示全句
+    if (displayedText.length < targetText.length && currentNode.type !== 'choice') {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      setDisplayedText(currentNode.text || '');
+      setDisplayedText(targetText);
       return;
     }
 
+    // 2. 如果打完了，检查还有没有下一行
+    if (subLineIndex < subLines.length - 1) {
+      // 还有下一行，索引+1，触发 useEffect 重新打字
+      setSubLineIndex(prev => prev + 1);
+      return;
+    }
+
+    // 3. 所有行都显示完了，执行跳转逻辑 (原来的逻辑)
+    
+    // 设置 flag
     if (currentNode.flag) {
       setGameState((prev) => ({
         ...prev,
@@ -139,15 +190,18 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       }));
     }
 
+    // 跳转 next
     if (currentNode.next) {
+      // 记录历史（记录整个节点的文本，而不是一行行记录，这样回看比较方便）
       setGameState((prev) => ({
         ...prev,
         currentNodeId: currentNode.next!,
         history: [...prev.history, prev.currentNodeId],
       }));
     }
-  }, [currentNode, displayedText]);
+  }, [currentNode, displayedText, subLines, subLineIndex]);
 
+  // (保留原来的 handleChoice, handleSave 等...)
   const handleChoice = useCallback(
     (choice: { text: string; next: string; flag?: string; flagValue?: any }) => {
       const newFlags = { ...gameState.flags };
@@ -165,10 +219,10 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   );
 
   const handleSave = useCallback((slot: number) => {
-      const screenshot = currentNode?.text || '游戏进行中';
+      const screenshot = displayedText || '游戏进行中';
       saveSystem.saveGame(slot, gameMetadata.title, screenshot, gameState.currentNodeId, gameState);
       setShowSaveMenu(false);
-  }, [currentNode, gameState]);
+  }, [displayedText, gameState]);
 
   const handleLoad = useCallback((slot: number) => {
     const saveData = saveSystem.loadGame(slot);
@@ -190,9 +244,9 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   }, []);
 
   const handleQuickSave = useCallback(() => {
-    const screenshot = currentNode?.text || '游戏进行中';
+    const screenshot = displayedText || '游戏进行中';
     saveSystem.quickSave(gameMetadata.title, screenshot, gameState.currentNodeId, gameState);
-  }, [currentNode, gameState]);
+  }, [displayedText, gameState]);
 
   const handleBacklog = useCallback(() => {
     if (gameState.history.length > 0) {
@@ -205,6 +259,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     }
   }, [gameState.history]);
 
+  // 键盘事件
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings || showHistory) return;
@@ -239,22 +294,25 @@ export const GameEngine: React.FC<GameEngineProps> = ({
 
   if (!currentNode) return <div>Loading...</div>;
 
-  // ==========================================
   // 渲染逻辑
-  // ==========================================
   const characterName = currentNode.character ? characters[currentNode.character]?.name : '';
   
-  // 判断谁在说话
   const isWanhuiSpeaking = currentNode.character === 'wanhui';
   const isNarrator = currentNode.character === 'narrator' || !currentNode.character;
   const isOtherSpeaking = !isWanhuiSpeaking && !isNarrator;
 
+  // 历史记录生成
   const historyList = gameState.history.map(nodeId => {
      const node = storyNodes[nodeId];
      if (!node || !node.text) return null;
      const name = node.character ? characters[node.character]?.name : '';
-     return { name, text: node.text };
+     return { name, text: node.text }; // 历史记录显示完整文本
   }).filter(item => item !== null);
+
+  // 判断是否是最后一行（用于显示选项）
+  const isLastLine = subLineIndex === subLines.length - 1;
+  const isTypingFinished = displayedText.length === (subLines[subLineIndex] || '').length;
+  const showChoices = currentNode.type === 'choice' && isLastLine && isTypingFinished;
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden font-sans select-none">
@@ -270,7 +328,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
             transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
-            <img src={currentNode.background} alt="BG" className="w-full h-full object-cover opacity-60" /> {/* 稍微压暗背景 */}
+            <img src={currentNode.background} alt="BG" className="w-full h-full object-cover opacity-60" />
             <div className="absolute inset-0 bg-black/40" />
           </motion.div>
         )}
@@ -291,15 +349,15 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       </AnimatePresence>
 
       {/* 3. 对话框 (集成头像) */}
-      {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending') && currentNode.text && (
+      {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending' || currentNode.type === 'choice') && (
         <DialogueBox
           character={characterName}
-          text={displayedText}
+          text={displayedText} // 显示当前这一行的字
           onNext={handleNext}
-          isChoice={false}
-          isTyping={displayedText.length < (currentNode.text?.length || 0)}
           
-          // --- 新增：传递头像和状态 ---
+          // 只有打字中才显示光标
+          isTyping={!isTypingFinished}
+          
           leftSprite={currentNode.characterSprite || characters.wanhui?.sprite}
           rightSprite={rightChar?.sprite}
           isLeftSpeaking={isWanhuiSpeaking}
@@ -307,8 +365,8 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         />
       )}
 
-      {/* 4. 选择面板 */}
-      {currentNode.type === 'choice' && currentNode.choices && (
+      {/* 4. 选择面板 (只有在最后一行文字显示完后才出现) */}
+      {showChoices && currentNode.choices && (
         <ChoicePanel choices={currentNode.choices} onSelect={handleChoice} />
       )}
 
@@ -324,7 +382,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
          </button>
       </div>
 
-      {/* 6. 历史记录 (深色风格) */}
+      {/* 6. 历史记录 (显示完整段落) */}
       {showHistory && (
         <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col p-8 animate-in fade-in duration-200">
           <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
@@ -339,12 +397,13 @@ export const GameEngine: React.FC<GameEngineProps> = ({
             {historyList.map((log, i) => (
               <div key={i} className="flex flex-col gap-1 border-b border-gray-800 pb-4">
                 {log?.name && <span className="text-red-500 font-bold text-sm tracking-wider">{log.name}</span>}
-                <p className="text-gray-400 leading-relaxed text-lg">{log?.text}</p>
+                <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{log?.text}</p>
               </div>
             ))}
+             {/* 当前显示的完整文本（方便回看当前句） */}
              <div className="flex flex-col gap-1 opacity-50">
                 {characterName && <span className="text-red-500 font-bold text-sm tracking-wider">{characterName}</span>}
-                <p className="text-gray-400 leading-relaxed text-lg">{displayedText}</p>
+                <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{currentNode.text}</p>
               </div>
           </div>
         </div>
