@@ -1,213 +1,184 @@
-// 恐怖题材游戏故事数据
 import { DialogueNode, Character } from '../types/game';
 
+// ==========================================
 // 角色定义
+// ==========================================
 export const characters: Record<string, Character> = {
   narrator: {
     id: 'narrator',
-    name: '',
+    name: '', // 旁白没有名字
     sprite: '',
   },
   wanhui: {
     id: 'wanhui',
-    name: '万辉',
-    sprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    name: '万辉', // 主角
+    sprite: '/assets/wanhui_cat.png', // 假设你把那张猫图放在了这里
   },
-  voice: {
-    id: 'voice',
+  shadow: {
+    id: 'shadow',
+    name: '电梯中凝结的黑暗',
+    sprite: '', // 黑暗可能没有具体立绘，或者是一团黑雾图
+  },
+  unknown: {
+    id: 'unknown',
     name: '？？？',
-    sprite: '',
-  },
-  yinyu: {
-    id: 'yinyu',
-    name: '殷玉',
-    sprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-  },
-  mirror_girl: {
-    id: 'mirror_girl',
-    name: '镜中少女',
-    sprite: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-  },
-  phone_voice: {
-    id: 'phone_voice',
-    name: '电话里的声音',
-    sprite: '',
+    sprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 暂用一个神秘剪影代替
   },
 };
 
+// ==========================================
 // 故事节点
+// ==========================================
 export const storyNodes: Record<string, DialogueNode> = {
-  // ========== 开场 (新脚本) ==========
+  // ========== 序章：苏醒 ==========
   start: {
     id: 'start',
     type: 'scene',
-    background: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200', // Very dark/black placeholder
+    // 黑色背景
+    background: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200', 
     text: '…\n………\n滴答，滴答。\n远处不断传来水滴下形成的声音。',
-    next: 'intro_1',
+    next: 'wake_up_1',
   },
 
-  intro_1: {
-    id: 'intro_1',
+  wake_up_1: {
+    id: 'wake_up_1',
     type: 'dialogue',
     character: 'narrator',
     text: '我渐渐找回了自己的意识。\n该醒过来了。',
-    next: 'intro_2',
+    next: 'wake_up_2',
   },
 
-  intro_2: {
-    id: 'intro_2',
+  wake_up_2: {
+    id: 'wake_up_2',
     type: 'dialogue',
     character: 'wanhui',
     text: '…',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_3',
+    // 【头像1】 - 这里的 sprite 可以换成具体的表情差分图，例如 /assets/wanhui_1.png
+    characterSprite: '/assets/wanhui_cat.png', 
+    next: 'room_desc',
   },
 
-  intro_3: {
-    id: 'intro_3',
+  room_desc: {
+    id: 'room_desc',
     type: 'scene',
-    // 插入场景-正对着电梯门的视角
-    background: 'https://images.unsplash.com/photo-1599053605002-eca7a37d246f?w=1200',
+    // 昏暗的房间背景
+    background: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?w=1200',
     character: 'narrator',
-    text: '我睁开眼睛。',
-    next: 'intro_4',
+    text: '我睁开眼睛。\n这是一个谈得上昏暗但不失整洁的房间。\n四周空荡荡的，说不上是金属还是混凝土的材质映着你孤零零的身影。\n不远处有一扇金属大门。',
+    next: 'room_reaction',
   },
 
-  intro_4: {
-    id: 'intro_4',
+  room_reaction: {
+    id: 'room_reaction',
     type: 'dialogue',
     character: 'wanhui',
     text: '这里是…？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_5',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像2】
+    next: 'room_think',
   },
 
-  intro_5: {
-    id: 'intro_5',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '这是一个谈得上昏暗但不失整洁的房间。\n四周空荡荡的，说不上是金属还是混凝土的材质映着你孤零零的身影。\n不远处有一扇金属大门。',
-    next: 'intro_6',
-  },
-
-  intro_6: {
-    id: 'intro_6',
+  room_think: {
+    id: 'room_think',
     type: 'dialogue',
     character: 'narrator',
     text: '我眨了眨眼。',
-    next: 'intro_7',
+    next: 'room_confused',
   },
 
-  intro_7: {
-    id: 'intro_7',
+  room_confused: {
+    id: 'room_confused',
     type: 'dialogue',
     character: 'wanhui',
     text: '我怎么会在这里？\n我记得我明明在路上…',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_8',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像5】
+    next: 'water_sound',
   },
 
-  intro_8: {
-    id: 'intro_8',
+  water_sound: {
+    id: 'water_sound',
     type: 'dialogue',
     character: 'narrator',
     text: '滴水声还在继续。我下意识寻找声音的源头。',
-    next: 'intro_9',
+    next: 'water_react',
   },
 
-  intro_9: {
-    id: 'intro_9',
+  water_react: {
+    id: 'water_react',
     type: 'dialogue',
     character: 'wanhui',
     text: '…欸？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_10',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像1】
+    next: 'empty_room',
   },
 
-  intro_10: {
-    id: 'intro_10',
+  empty_room: {
+    id: 'empty_room',
     type: 'dialogue',
     character: 'narrator',
     text: '…这个房间除了门什么都没有。',
-    next: 'intro_11',
+    next: 'leak_complain',
   },
 
-  intro_11: {
-    id: 'intro_11',
+  leak_complain: {
+    id: 'leak_complain',
     type: 'dialogue',
     character: 'wanhui',
     text: '也许是隔音太差了…\n…\n看着这么新，漏水也太厉害了吧？！',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_12',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像11】
+    next: 'kidnap_thought',
   },
 
-  intro_12: {
-    id: 'intro_12',
+  kidnap_thought: {
+    id: 'kidnap_thought',
     type: 'dialogue',
     character: 'narrator',
     text: '停止胡思乱想，我开始思考自己为什么会来到这里。\n被绑架了？自己平时并没有惹上什么麻烦…\n…需要报警吗？',
-    next: 'intro_13',
+    next: 'phone_find',
   },
 
-  intro_13: {
-    id: 'intro_13',
+  phone_find: {
+    id: 'phone_find',
     type: 'dialogue',
     character: 'narrator',
     text: '…啊！\n这么一说，手机就在我身上。',
-    next: 'intro_14',
+    next: 'phone_check',
   },
 
-  intro_14: {
-    id: 'intro_14',
+  phone_check: {
+    id: 'phone_check',
     type: 'dialogue',
     character: 'wanhui',
     text: '（掏掏）\n……\n…完全没信号。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_15',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像13】 -> 【头像5】
+    next: 'phone_fail',
   },
 
-  intro_15: {
-    id: 'intro_15',
+  phone_fail: {
+    id: 'phone_fail',
     type: 'dialogue',
     character: 'narrator',
     text: '我沮丧地收起手机。\n也许会有人注意到自己的失踪？\n到底为什么要盯上我呢…真是倒霉啊…',
-    next: 'intro_16',
+    next: 'investigate_start',
   },
 
-  intro_16: {
-    id: 'intro_16',
+  investigate_start: {
+    id: 'investigate_start',
     type: 'dialogue',
     character: 'wanhui',
     text: '一直这样等着也不是什么好主意…调查一下周围吧。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像11】
     next: 'investigate_menu',
   },
 
-  // ========== 调查阶段 ==========
+  // ========== 调查循环 ==========
   investigate_menu: {
     id: 'investigate_menu',
     type: 'choice',
     text: '调查一下周围吧。',
     choices: [
-      {
-        text: '【墙壁】',
-        next: 'look_wall',
-      },
-      {
-        text: '【墙角】',
-        next: 'look_corner',
-      },
-      {
-        text: '【可疑的大门】',
-        next: 'look_door',
-      },
+      { text: '【墙壁】', next: 'look_wall' },
+      { text: '【墙角】', next: 'look_corner' },
+      { text: '【可疑的大门】', next: 'look_door' },
     ],
   },
 
@@ -223,8 +194,7 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'dialogue',
     character: 'wanhui',
     text: '好厉害…像镜子一样。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像1】
     next: 'look_wall_3',
   },
   look_wall_3: {
@@ -232,7 +202,7 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'dialogue',
     character: 'narrator',
     text: '你笑了笑。',
-    next: 'investigate_menu', // 循环回到菜单
+    next: 'investigate_menu',
   },
 
   look_corner: {
@@ -240,9 +210,8 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'dialogue',
     character: 'wanhui',
     text: '嗯…应该没有机关。\n会有才怪了吧…',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'investigate_menu', // 循环回到菜单
+    characterSprite: '/assets/wanhui_cat.png', // 【头像1】->【头像11】
+    next: 'investigate_menu',
   },
 
   look_door: {
@@ -250,733 +219,421 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'dialogue',
     character: 'wanhui',
     text: '这个…完全没看到机关呢。\n可恶…明明是唯一的线索…\n嗯…？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'door_event_1',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像2】
+    next: 'door_event',
   },
 
-  door_event_1: {
-    id: 'door_event_1',
+  // ========== 电梯开启 ==========
+  door_event: {
+    id: 'door_event',
     type: 'dialogue',
     character: 'narrator',
     text: '大门轻微颤了颤，像是要打开。',
-    next: 'door_event_2',
+    next: 'door_react',
   },
-
-  door_event_2: {
-    id: 'door_event_2',
+  door_react: {
+    id: 'door_react',
     type: 'dialogue',
     character: 'wanhui',
     text: '！？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'door_event_3',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像4】
+    next: 'door_open_scene',
   },
-
-  door_event_3: {
-    id: 'door_event_3',
+  door_open_scene: {
+    id: 'door_open_scene',
     type: 'scene',
-    // 切换场景-电梯门打开
-    background: 'https://images.unsplash.com/photo-1631530940388-cc5519a4dd58?w=1200',
+    // 电梯打开的背景
+    background: 'https://images.unsplash.com/photo-1631530940388-cc5519a4dd58?w=1200', 
     character: 'narrator',
     text: '我后退了两步。\n一阵尖锐的声音响起，两扇铁片缓缓向两边滑动。\n原来是电梯啊。\n门完全打开了。',
-    next: 'elevator_open_scene',
+    next: 'elevator_darkness',
   },
 
-  elevator_open_scene: {
-    id: 'elevator_open_scene',
+  elevator_darkness: {
+    id: 'elevator_darkness',
     type: 'dialogue',
     character: 'narrator',
-    text: '里面漆黑一片。\n不知为何，我的脚像是被胶水紧紧粘在了地板上；我想要鼓起勇气发出声音，但某种本能完全压制了我的自主行动。',
-    next: 'elevator_open_2',
+    text: '里面漆黑一片。\n不知为何，我的脚像是被胶水紧紧粘在了地板上；我想要鼓起勇气发出声音，但某种本能完全压制了我的自主行动。\n黑暗里传来的气息让我动弹不得。',
+    next: 'elevator_think',
   },
 
-  elevator_open_2: {
-    id: 'elevator_open_2',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '黑暗里传来的气息让我动弹不得。\n现在转身逃跑当然不是明智的选择。\n那我该干什么…？',
-    next: 'intro_voice_reveal', // 连接到原有的剧情逻辑
-  },
-
-  intro_voice_reveal: {
-    id: 'intro_voice_reveal',
-    type: 'dialogue',
-    character: 'voice',
-    text: '进来吧，万辉。',
-    next: 'intro_6_old',
-  },
-
-  intro_6_old: {
-    id: 'intro_6_old',
+  elevator_think: {
+    id: 'elevator_think',
     type: 'dialogue',
     character: 'wanhui',
-    text: '你...你是谁？你怎么知道我的名字？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'intro_7_old',
+    text: '…',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像3】
+    next: 'action_choice',
   },
 
-  intro_7_old: {
-    id: 'intro_7_old',
-    type: 'dialogue',
-    character: 'voice',
-    text: '我是谁并不重要。\n重要的是...你想离开这里吗？',
-    next: 'intro_choice',
-  },
-
-  intro_choice: {
-    id: 'intro_choice',
+  // ========== 核心分支选择 ==========
+  action_choice: {
+    id: 'action_choice',
     type: 'choice',
-    text: '你决定...',
+    text: '我现在该干什么…？',
     choices: [
-      {
-        text: '走进电梯',
-        next: 'enter_elevator',
-      },
-      {
-        text: '拒绝进入，寻找其他出路',
-        next: 'bad_end_refuse',
-      },
+      { text: '停下观察', next: 'action_observe' },
+      { text: '找话题', next: 'action_talk' },
+      { text: '逃跑', next: 'action_run' },
+      // 这里的 condition 逻辑需要引擎支持，如果不支持会直接显示
+      { text: '讲笑话', next: 'action_joke_menu', condition: 'has_seen_other_choices' },
     ],
   },
 
-  bad_end_refuse: {
-    id: 'bad_end_refuse',
+  // --- 分支：停下观察 ---
+  action_observe: {
+    id: 'action_observe',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '我停下来观察电梯内部。\n虽然从颜色上看没有任何区别，但这片黑暗显得格外幽谧。\n有什么微妙的气息在电梯的深处。直觉告诉我它在等着我。',
+    next: 'observe_comment',
+  },
+  observe_comment: {
+    id: 'observe_comment',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '感觉像一大团浓稠的黑莓果酱在蠕动…',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像6】
+    next: 'ep1_start', // 接 EP1
+  },
+
+  // --- 分支：逃跑 (BE2) ---
+  action_run: {
+    id: 'action_run',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '…果然还是逃跑吧。\n我从僵硬到不能动的状态挣脱出来，转身向后跑去。',
+    next: 'run_fail',
+  },
+  run_fail: {
+    id: 'run_fail',
+    type: 'scene',
+    // 逃跑失败的CG
+    background: 'https://images.unsplash.com/photo-1505506874110-6a7a69069a08?w=1200', 
+    character: 'narrator',
+    text: '我这么想着，扶着墙往后一回头。\n…完蛋了。\n（嘎吱嘎吱…）',
+    next: 'be2_voice',
+  },
+  be2_voice: {
+    id: 'be2_voice',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '…真无聊。',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像1】
+    next: 'be2_end',
+  },
+  be2_end: {
+    id: 'be2_end',
     type: 'ending',
     endingType: 'bad',
-    background: 'https://images.unsplash.com/photo-1505506874110-6a7a69069a08?w=1200',
-    character: 'narrator',
-    text: '你转身离开电梯，试图寻找其他出口。\n但房间里什么都没有，墙壁开始向内收缩...\n\n你再也没能醒来。\n\n【坏结局：拒绝的代价】',
-    flag: 'ending_refuse',
+    text: '【BE2 - 逃脱失败】\n\n有些东西，一旦看见了就再也逃不掉了。',
+    flag: 'be_run',
   },
 
-  enter_elevator: {
-    id: 'enter_elevator',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1516410529446-2c777cb7366d?w=1200',
-    character: 'narrator',
-    text: '你战战兢兢地走进电梯。\n门在你身后关闭，显示屏上显示：第10层',
-    next: 'elevator_1',
-  },
-
-  elevator_1: {
-    id: 'elevator_1',
-    type: 'dialogue',
-    character: 'voice',
-    text: '很好。现在，我们要往下走。\n每一层...都有它的规则。',
-    next: 'elevator_2',
-  },
-
-  elevator_2: {
-    id: 'elevator_2',
+  // --- 分支：找话题 ---
+  action_talk: {
+    id: 'action_talk',
     type: 'dialogue',
     character: 'wanhui',
-    text: '规则？什么规则？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'elevator_3',
+    text: '…嗨？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像13】
+    next: 'talk_menu_intro',
   },
-
-  elevator_3: {
-    id: 'elevator_3',
-    type: 'dialogue',
-    character: 'voice',
-    text: '你会明白的。\n记住——不要违反规则，否则...\n\n电梯开始下降。',
-    next: 'floor_9_intro',
-  },
-
-  // ========== 第9层：镜子怪谈 ==========
-  floor_9_intro: {
-    id: 'floor_9_intro',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=1200',
-    character: 'narrator',
-    text: '【第9层】\n\n电梯门打开，眼前是一个长长的走廊。\n走廊尽头有一面巨大的镜子。',
-    next: 'floor_9_1',
-  },
-
-  floor_9_1: {
-    id: 'floor_9_1',
-    type: 'dialogue',
-    character: 'voice',
-    text: '规则很简单：走到镜子前，但不要回头。',
-    next: 'floor_9_2',
-  },
-
-  floor_9_2: {
-    id: 'floor_9_2',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '不要回头？为什么？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'floor_9_3',
-  },
-
-  floor_9_3: {
-    id: 'floor_9_3',
+  talk_menu_intro: {
+    id: 'talk_menu_intro',
     type: 'dialogue',
     character: 'narrator',
-    text: '你开始沿着走廊前进。\n身后传来了奇怪的声音...像是有人在跟着你。',
-    next: 'floor_9_choice_1',
+    text: '…我为什么要和这种东西打招呼…\n那片黑暗动了动。也许我可以再说点话…？',
+    next: 'talk_menu',
   },
-
-  floor_9_choice_1: {
-    id: 'floor_9_choice_1',
+  talk_menu: {
+    id: 'talk_menu',
     type: 'choice',
-    text: '你决定...',
+    text: '说什么好呢？',
     choices: [
-      {
-        text: '忍住好奇心，继续前进',
-        next: 'floor_9_continue',
-      },
-      {
-        text: '回头看看',
-        next: 'bad_end_floor_9_look',
-      },
+      { text: '你是谁？', next: 'talk_who' },
+      { text: '你吃饭了吗？', next: 'talk_eat' },
+      { text: '别杀我', next: 'talk_kill' },
+      { text: '好乖好乖', next: 'talk_cute' },
     ],
   },
 
-  bad_end_floor_9_look: {
-    id: 'bad_end_floor_9_look',
+  // 找话题 1: 你是谁
+  talk_who: {
+    id: 'talk_who',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '……你是谁？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像13】
+    next: 'who_silence',
+  },
+  who_silence: {
+    id: 'who_silence',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '……',
+    next: 'who_react',
+  },
+  who_react: {
+    id: 'who_react',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '…………',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像5】
+    next: 'who_laugh',
+  },
+  who_laugh: {
+    id: 'who_laugh',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '…呵呵。',
+    next: 'who_shock',
+  },
+  who_shock: {
+    id: 'who_shock',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '！？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像14】
+    next: 'who_reveal',
+  },
+  who_reveal: {
+    id: 'who_reveal',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '关于这个问题…',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像1】
+    next: 'ep1_start',
+  },
+
+  // 找话题 2: 吃了吗
+  talk_eat: {
+    id: 'talk_eat',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '…你吃了吗？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像13】
+    next: 'eat_silence',
+  },
+  eat_silence: {
+    id: 'eat_silence',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '…它有嘴巴吗？',
+    next: 'eat_shadow',
+  },
+  eat_shadow: {
+    id: 'eat_shadow',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '……噗！',
+    next: 'eat_laugh_wild',
+  },
+  eat_laugh_wild: {
+    id: 'eat_laugh_wild',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈！',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像2】
+    next: 'eat_confused',
+  },
+  eat_confused: {
+    id: 'eat_confused',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '？？？？？？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像14】
+    next: 'eat_end',
+  },
+  eat_end: {
+    id: 'eat_end',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '咳咳…失礼了。\n…笑死我了。',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像1】
+    next: 'ep1_start',
+  },
+
+  // 找话题 3: 别杀我 (BE1)
+  talk_kill: {
+    id: 'talk_kill',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '…我不想死。',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像11】
+    next: 'kill_trigger',
+  },
+  kill_trigger: {
+    id: 'kill_trigger',
+    type: 'dialogue',
+    character: 'narrator',
+    text: '…说出这句话后，好像有什么开关被打开了一样。',
+    next: 'kill_darkness',
+  },
+  kill_darkness: {
+    id: 'kill_darkness',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '你怎么断定我一定会杀你呢？',
+    next: 'kill_mental_break',
+  },
+  kill_mental_break: {
+    id: 'kill_mental_break',
+    type: 'scene',
+    // 精神污染的背景
+    background: 'https://images.unsplash.com/photo-1605806616949-1e87b487bc2a?w=1200', 
+    character: 'narrator',
+    text: '我会死掉吗？为什么我会来到这里？我身上发生了什么事？\n我不想停止思考。我不想停止思考。我不想停止思考。\n我不想停止思考。我不想停止思考。我不想停止思考。',
+    next: 'kill_scream',
+  },
+  kill_scream: {
+    id: 'kill_scream',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像9】
+    next: 'be1_end',
+  },
+  be1_end: {
+    id: 'be1_end',
     type: 'ending',
     endingType: 'bad',
-    background: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=1200',
-    character: 'narrator',
-    text: '你忍不住回头看了一眼。\n\n在你身后，站着一个和你一模一样的"人"，\n但它的眼睛...是纯黑色的。\n\n"找到你了。"它笑着说。\n\n【坏结局：镜中的自己】',
-    flag: 'ending_floor_9_look',
+    text: '【BE1 - 混乱】\n\n有时候，思考也是一种诅咒。',
+    flag: 'be_chaos',
   },
 
-  floor_9_continue: {
-    id: 'floor_9_continue',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '你咬紧牙关，继续向前走。\n脚步声越来越近，几乎就在你耳边...',
-    next: 'floor_9_4',
-  },
-
-  floor_9_4: {
-    id: 'floor_9_4',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '终于，你来到了镜子前。\n镜子里映出了你的倒影...但有些不对劲。',
-    next: 'floor_9_5',
-  },
-
-  floor_9_5: {
-    id: 'floor_9_5',
-    type: 'dialogue',
-    character: 'mirror_girl',
-    text: '你好啊，万辉。',
-    characterSprite: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-    characterPosition: 'center',
-    next: 'floor_9_6',
-  },
-
-  floor_9_6: {
-    id: 'floor_9_6',
+  // 找话题 4: 好乖好乖
+  talk_cute: {
+    id: 'talk_cute',
     type: 'dialogue',
     character: 'wanhui',
-    text: '什么？！镜子里的...不是我？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'floor_9_7',
+    text: '好乖，好乖',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像12】
+    next: 'cute_silence',
   },
-
-  floor_9_7: {
-    id: 'floor_9_7',
+  cute_silence: {
+    id: 'cute_silence',
     type: 'dialogue',
-    character: 'mirror_girl',
-    text: '想要通过这里，就和我玩个游戏吧。\n我会问你三个问题，答错了...你就留下来陪我。',
-    characterSprite: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-    characterPosition: 'center',
-    next: 'floor_9_question',
+    character: 'shadow',
+    text: '……\n呃…',
+    next: 'cute_react',
+  },
+  cute_react: {
+    id: 'cute_react',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '干嘛…',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像1】
+    next: 'ep1_start',
   },
 
-  floor_9_question: {
-    id: 'floor_9_question',
+  // --- 隐藏分支：讲笑话 ---
+  action_joke_menu: {
+    id: 'action_joke_menu',
     type: 'choice',
-    text: '镜中少女问："你还记得...你是怎么来到这里的吗？"',
+    text: '我不知道讲什么…咳咳。',
     choices: [
-      {
-        text: '我在学校...然后就醒来了',
-        next: 'floor_9_correct',
-      },
-      {
-        text: '我一直都在这里',
-        next: 'bad_end_floor_9_wrong',
-      },
-      {
-        text: '我不记得了',
-        next: 'floor_9_correct',
-      },
+      { text: '绿色的毛茸茸', next: 'joke_green' },
+      { text: '跳跳糖', next: 'joke_sweet' },
+      // 超级隐藏选项
+      { text: '？？？', next: 'joke_meta', condition: 'has_seen_all_jokes' },
     ],
   },
 
-  bad_end_floor_9_wrong: {
-    id: 'bad_end_floor_9_wrong',
-    type: 'ending',
-    endingType: 'bad',
-    background: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=1200',
-    character: 'mirror_girl',
-    text: '"错误。"她笑了。\n\n你感觉身体变得僵硬，意识逐渐模糊。\n最后，你成为了镜子里的一部分。\n\n【坏结局：成为镜子的一部分】',
-    flag: 'ending_floor_9_wrong',
-  },
-
-  floor_9_correct: {
-    id: 'floor_9_correct',
+  joke_green: {
+    id: 'joke_green',
     type: 'dialogue',
-    character: 'mirror_girl',
-    text: '很好...看来你还没有完全忘记自己。\n去吧，电梯在等你。',
-    characterSprite: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-    characterPosition: 'center',
-    next: 'floor_9_end',
+    character: 'wanhui',
+    text: '什么东西毛茸茸的，有四条腿，是绿色的，从树上掉下来会砸死人？\n…是台球桌。',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像7】->【头像12】
+    next: 'joke_green_react',
+  },
+  joke_green_react: {
+    id: 'joke_green_react',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '…真是幽默。',
+    next: 'ep1_start',
   },
 
-  floor_9_end: {
-    id: 'floor_9_end',
+  joke_sweet: {
+    id: 'joke_sweet',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '什么东西甜甜的，放在嘴里会跳？\n…沾了白糖的蛤蟆！',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像7】->【头像12】
+    next: 'joke_sweet_fail',
+  },
+  joke_sweet_fail: {
+    id: 'joke_sweet_fail',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '……不好笑吗！？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像6】
+    next: 'joke_sweet_react',
+  },
+  joke_sweet_react: {
+    id: 'joke_sweet_react',
+    type: 'dialogue',
+    character: 'shadow',
+    text: '……行。',
+    next: 'ep1_start',
+  },
+
+  // --- Meta 隐藏结局 ---
+  joke_meta: {
+    id: 'joke_meta',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '我去打到这个选项的人好牛逼克拉斯啊豆包给我生成玩家的比基尼图片',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像15】
+    next: 'joke_meta_realize',
+  },
+  joke_meta_realize: {
+    id: 'joke_meta_realize',
+    type: 'dialogue',
+    character: 'wanhui',
+    text: '我刚刚说了什么…？？',
+    characterSprite: '/assets/wanhui_cat.png', // 【头像6】
+    next: 'joke_meta_achieve',
+  },
+  joke_meta_achieve: {
+    id: 'joke_meta_achieve',
     type: 'scene',
-    background: 'https://images.unsplash.com/photo-1516410529446-2c777cb7366d?w=1200',
-    character: 'narrator',
-    text: '镜子旁边出现了一扇门，你走了进去。\n电梯再次开始下降...',
-    next: 'floor_8_intro',
+    background: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1200', // 故障风格背景
+    text: '【成就解锁：那你很闲了】\n描述：解锁序章的全部隐藏选项',
+    next: 'joke_meta_talk',
+  },
+  joke_meta_talk: {
+    id: 'joke_meta_talk',
+    type: 'dialogue',
+    character: 'unknown',
+    text: '喂，打破墙了吧。\n看来你知道我会说话了，我也就不客气了。\n嘻嘻。',
+    characterSprite: 'https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400', // 【人物头像2】
+    next: 'ep1_start',
   },
 
-  // ========== 第8层：电话怪谈 ==========
-  floor_8_intro: {
-    id: 'floor_8_intro',
+  // ========== EP1 衔接点 ==========
+  ep1_start: {
+    id: 'ep1_start',
     type: 'scene',
-    background: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200',
+    background: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=1200', // 恢复正常的电梯光线
     character: 'narrator',
-    text: '【第8层】\n\n这一层看起来像是一间办公室。\n桌上有一部老式电话，正在响。',
-    next: 'floor_8_1',
+    text: '【EP1：电梯里的可疑人物】\n\n我茫然地看向电梯厢内。\n簇拥着的粘稠不明物一下散去，我透过依旧存在的黑暗看到电梯里出现了一个人影。',
+    next: 'to_be_continued',
   },
-
-  floor_8_1: {
-    id: 'floor_8_1',
-    type: 'dialogue',
-    character: 'voice',
-    text: '接起电话，但记住：\n无论听到什么，都不要说出你的真实姓名。',
-    next: 'floor_8_choice_1',
-  },
-
-  floor_8_choice_1: {
-    id: 'floor_8_choice_1',
-    type: 'choice',
-    text: '你决定...',
-    choices: [
-      {
-        text: '接起电话',
-        next: 'floor_8_answer',
-      },
-      {
-        text: '忽视电话，寻找出口',
-        next: 'floor_8_ignore',
-      },
-    ],
-  },
-
-  floor_8_ignore: {
-    id: 'floor_8_ignore',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '你决定不理会电话，在房间里寻找出口。\n但电话铃声越来越大，震耳欲聋...',
-    next: 'floor_8_forced',
-  },
-
-  floor_8_forced: {
-    id: 'floor_8_forced',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '你不得不捂住耳朵。\n最终，你还是伸手拿起了电话。',
-    next: 'floor_8_answer',
-  },
-
-  floor_8_answer: {
-    id: 'floor_8_answer',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '喂...？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'floor_8_2',
-  },
-
-  floor_8_2: {
-    id: 'floor_8_2',
-    type: 'dialogue',
-    character: 'phone_voice',
-    text: '你好...请问你是...？',
-    next: 'floor_8_question',
-  },
-
-  floor_8_question: {
-    id: 'floor_8_question',
-    type: 'choice',
-    text: '电话里的声音在等待你的回答...',
-    choices: [
-      {
-        text: '我是万辉',
-        next: 'bad_end_floor_8_name',
-      },
-      {
-        text: '我是谁不重要',
-        next: 'floor_8_correct',
-      },
-      {
-        text: '你是谁？',
-        next: 'floor_8_correct',
-      },
-    ],
-  },
-
-  bad_end_floor_8_name: {
-    id: 'bad_end_floor_8_name',
-    type: 'ending',
-    endingType: 'bad',
-    background: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200',
-    character: 'phone_voice',
-    text: '"万辉...万辉...万辉..."\n\n电话里的声音不断重复着你的名字。\n你感觉到有什么东西从电话线里钻了出来...\n\n【坏结局：被夺走姓名】',
-    flag: 'ending_floor_8_name',
-  },
-
-  floor_8_correct: {
-    id: 'floor_8_correct',
-    type: 'dialogue',
-    character: 'phone_voice',
-    text: '...聪明。\n那么，记住这个号码：4-7-2。\n你会需要它的。',
-    next: 'floor_8_3',
-  },
-
-  floor_8_3: {
-    id: 'floor_8_3',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '电话挂断了。\n房间的另一侧出现了一扇门，上面有一个密码锁。',
-    next: 'floor_8_password',
-    flag: 'got_password',
-  },
-
-  floor_8_password: {
-    id: 'floor_8_password',
-    type: 'choice',
-    text: '密码锁需要输入三位数字...',
-    choices: [
-      {
-        text: '输入 4-7-2',
-        next: 'floor_8_end',
-      },
-      {
-        text: '输入 7-4-2',
-        next: 'bad_end_floor_8_wrong_code',
-      },
-      {
-        text: '输入 2-4-7',
-        next: 'bad_end_floor_8_wrong_code',
-      },
-    ],
-  },
-
-  bad_end_floor_8_wrong_code: {
-    id: 'bad_end_floor_8_wrong_code',
-    type: 'ending',
-    endingType: 'bad',
-    background: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200',
-    character: 'narrator',
-    text: '密码错误。\n\n警报声响起，房间开始充满刺鼻的气体。\n你无法呼吸...\n\n【坏结局：错误的密码】',
-    flag: 'ending_floor_8_code',
-  },
-
-  floor_8_end: {
-    id: 'floor_8_end',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1516410529446-2c777cb7366d?w=1200',
-    character: 'narrator',
-    text: '门开了。你回到了电梯里。\n显示屏上的数字跳到了"1"。',
-    next: 'floor_1_intro',
-  },
-
-  // ========== 第1层：最终层 ==========
-  floor_1_intro: {
-    id: 'floor_1_intro',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?w=1200',
-    character: 'narrator',
-    text: '【第1层】\n\n电梯门打开，眼前是一个空旷的大厅。\n中央站着一个身着白衣的人。',
-    next: 'floor_1_1',
-  },
-
-  floor_1_1: {
-    id: 'floor_1_1',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '欢迎来到最底层，万辉。\n我是殷玉，掌管世界怪谈的神明。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'floor_1_2',
-  },
-
-  floor_1_2: {
-    id: 'floor_1_2',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '神明...？这到底是怎么回事？\n为什么我会在这里？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'floor_1_3',
-  },
-
-  floor_1_3: {
-    id: 'floor_1_3',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '你还记得...在学校发生的事吗？',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'floor_1_4',
-  },
-
-  floor_1_4: {
-    id: 'floor_1_4',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '学校...我记得我在图书馆...\n然后...然后...！',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'floor_1_5',
-  },
-
-  floor_1_5: {
-    id: 'floor_1_5',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '你遭遇了一场"意外"。\n现在的你...已经无法在外界生存了。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'floor_1_6',
-  },
-
-  floor_1_6: {
-    id: 'floor_1_6',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '什么意思...无法生存？\n我...我到底怎么了？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'floor_1_7',
-  },
-
-  floor_1_7: {
-    id: 'floor_1_7',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '你的身体发生了变化。\n你现在...介于生与死之间。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'floor_1_8',
-  },
-
-  floor_1_8: {
-    id: 'floor_1_8',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '现在，你有两个选择。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'floor_1_9',
-  },
-
-  floor_1_9: {
-    id: 'floor_1_9',
-    type: 'dialogue',
-    character: 'narrator',
-    text: '殷玉指向大厅的两侧。\n左边是一扇普通的门，右边是一面巨大的镜子。',
-    next: 'floor_1_10',
-  },
-
-  floor_1_10: {
-    id: 'floor_1_10',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '左边的门，通往冥界——真正的死亡。\n右边的镜子，通往镜中世界——另一种存在。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'final_choice',
-  },
-
-  final_choice: {
-    id: 'final_choice',
-    type: 'choice',
-    text: '你该如何选择...？',
-    choices: [
-      {
-        text: '走向左边的门（冥界）',
-        next: 'choose_death',
-      },
-      {
-        text: '走向右边的镜子（镜中世界）',
-        next: 'choose_mirror_direct',
-      },
-    ],
-  },
-
-  // ========== 选择冥界路线 ==========
-  choose_death: {
-    id: 'choose_death',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '我...我选择冥界。\n如果这就是结局，我接受。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'death_1',
-  },
-
-  death_1: {
-    id: 'death_1',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '...你确定吗？\n一旦踏入那扇门，就再也回不来了。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'death_2',
-  },
-
-  death_2: {
-    id: 'death_2',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '我确定。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'death_3',
-  },
-
-  death_3: {
-    id: 'death_3',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1509048191080-d2984bad6ae5?w=1200',
-    character: 'narrator',
-    text: '你走向了那扇门。\n门后是一片纯白的光...',
-    next: 'death_4',
-  },
-
-  death_4: {
-    id: 'death_4',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '等等。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'death_5',
-  },
-
-  death_5: {
-    id: 'death_5',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '你的勇气...让我印象深刻。\n或许，你适合成为一名死神。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'death_6',
-  },
-
-  death_6: {
-    id: 'death_6',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '死神...？',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'death_7',
-  },
-
-  death_7: {
-    id: 'death_7',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '在镜中世界，我需要协助者。\n帮助那些迷失的灵魂...就像曾经的你一样。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'death_8',
-  },
-
-  death_8: {
-    id: 'death_8',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '这是我给你的邀请。\n你愿意...和我一起吗？',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'death_to_mirror',
-  },
-
-  death_to_mirror: {
-    id: 'death_to_mirror',
-    type: 'scene',
-    background: 'https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?w=1200',
-    character: 'narrator',
-    text: '你点了点头。\n殷玉微笑着，牵起你的手，走向了镜子。',
-    next: 'true_ending',
-  },
-
-  // ========== 直接选择镜子 ==========
-  choose_mirror_direct: {
-    id: 'choose_mirror_direct',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '我选择...镜中世界。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'center',
-    next: 'mirror_direct_1',
-  },
-
-  mirror_direct_1: {
-    id: 'mirror_direct_1',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '明智的选择。\n在那里，你将拥有新的身份——冥界的死神之一。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'right',
-    next: 'mirror_direct_2',
-  },
-
-  mirror_direct_2: {
-    id: 'mirror_direct_2',
-    type: 'dialogue',
-    character: 'wanhui',
-    text: '死神...听起来不错。',
-    characterSprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    characterPosition: 'left',
-    next: 'mirror_direct_3',
-  },
-
-  mirror_direct_3: {
-    id: 'mirror_direct_3',
-    type: 'dialogue',
-    character: 'yinyu',
-    text: '那么，欢迎来到新世界。',
-    characterSprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    characterPosition: 'center',
-    next: 'true_ending',
-  },
-
-  // ========== 真结局 ==========
-  true_ending: {
-    id: 'true_ending',
+  to_be_continued: {
+    id: 'to_be_continued',
     type: 'ending',
     endingType: 'good',
-    background: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200',
-    cg: 'https://images.unsplash.com/photo-1469173479606-ada03df615aa?w=1200',
-    character: 'narrator',
-    text: '你穿过了镜子。\n\n在镜中世界，万辉成为了殷玉的协助者。\n他引导着迷失的灵魂，帮助他们找到归宿。\n\n虽然失去了原本的生活...\n但在这里，他找到了新的意义。\n\n【真结局：镜中的死神】',
-    flag: 'ending_true',
+    text: '序章结束，感谢游玩！\n\n（更多内容开发中...）',
+    flag: 'ep1_start',
   },
 };
 
 // 游戏元数据
 export const gameMetadata = {
-  title: '镜界电梯',
-  version: '1.0.0',
+  title: '万辉的奇妙冒险',
+  version: '0.2.0',
   startNode: 'start',
 };
