@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Menu,
@@ -7,10 +7,11 @@ import {
   Settings,
   RotateCcw,
   SkipForward,
-  Volume2,
   Image as ImageIcon,
+  History, // 新增：历史记录图标
+  X,       // 新增：关闭图标
 } from 'lucide-react';
-import { DialogueNode, GameState, GameSettings } from '../types/game';
+import { DialogueNode, GameState, GameSettings, Character } from '../types/game'; // 确保引入 Character 类型
 import { DialogueBox } from './DialogueBox';
 import { ChoicePanel } from './ChoicePanel';
 import { SaveLoadMenu } from './SaveLoadMenu';
@@ -30,6 +31,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   startNode,
   loadedState,
 }) => {
+  // === 基础状态 ===
   const [gameState, setGameState] = useState<GameState>(
     loadedState || {
       currentNodeId: startNode || gameMetadata.startNode,
@@ -41,52 +43,104 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   );
 
   const [settings, setSettings] = useState<GameSettings>(saveSystem.loadSettings());
+  
+  // === 界面开关 ===
   const [showMenu, setShowMenu] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHistory, setShowHistory] = useState(false); // 新增：历史记录界面
   const [isAutoPlay, setIsAutoPlay] = useState(false);
+
+  // === 新增：打字机 & 头像状态 ===
+  const [displayedText, setDisplayedText] = useState(''); // 当前打字机显示的文字
+  const [rightChar, setRightChar] = useState<Character | null>(null); // 右侧立绘（配角）
+  
+  // 计时器引用
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentNode = storyNodes[gameState.currentNodeId];
 
-  // 处理CG解锁
+  // ==========================================
+  // 核心逻辑 1: 处理节点变化 & 打字机
+  // ==========================================
   useEffect(() => {
-    if (currentNode?.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
-      setGameState((prev) => ({
-        ...prev,
-        unlockedCGs: [...prev.unlockedCGs, currentNode.cg!],
-      }));
-    }
-  }, [currentNode, gameState.unlockedCGs]);
+    if (!currentNode) return;
 
-  // 处理结局解锁
-  useEffect(() => {
-    if (currentNode?.type === 'ending' && currentNode.flag) {
-      if (!gameState.unlockedEndings.includes(currentNode.flag)) {
-        setGameState((prev) => ({
-          ...prev,
-          unlockedEndings: [...prev.unlockedEndings, currentNode.flag!],
-        }));
+    // 1. 重置文字
+    setDisplayedText('');
+    
+    // 2. 更新 CG 解锁
+    if (currentNode.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
+      setGameState((prev) => ({ ...prev, unlockedCGs: [...prev.unlockedCGs, currentNode.cg!] }));
+    }
+
+    // 3. 更新结局解锁
+    if (currentNode.type === 'ending' && currentNode.flag && !gameState.unlockedEndings.includes(currentNode.flag)) {
+      setGameState((prev) => ({ ...prev, unlockedEndings: [...prev.unlockedEndings, currentNode.flag!] }));
+    }
+
+    // 4. 更新右侧立绘 (如果不是旁白且不是万辉)
+    if (currentNode.character && currentNode.character !== 'narrator' && currentNode.character !== 'wanhui') {
+      const char = characters[currentNode.character];
+      if (char) setRightChar(char);
+    }
+
+    // 5. 启动打字机
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+
+    let currentIndex = 0;
+    const fullText = currentNode.text || '';
+    const speed = 30; // 打字速度 ms/字
+
+    const typeChar = () => {
+      if (currentIndex < fullText.length) {
+        setDisplayedText(fullText.slice(0, currentIndex + 1));
+        currentIndex++;
+        typingTimeoutRef.current = setTimeout(typeChar, speed);
+      } else {
+        // 打字结束，检查自动播放
+        if (isAutoPlay && currentNode.type !== 'choice' && currentNode.type !== 'ending') {
+          const delay = (11 - settings.autoSpeed) * 500; // 这里的延迟是打完字后的停顿
+          autoPlayTimeoutRef.current = setTimeout(() => {
+            handleNext();
+          }, Math.max(delay, 500)); // 至少停顿0.5秒
+        }
       }
-    }
-  }, [currentNode, gameState.unlockedEndings]);
+    };
 
-  // 自动播放
-  useEffect(() => {
-    if (isAutoPlay && currentNode?.type === 'dialogue' && currentNode.next) {
-      const delay = (11 - settings.autoSpeed) * 1000;
-      const timer = setTimeout(() => {
-        handleNext();
-      }, delay);
-      return () => clearTimeout(timer);
+    // 如果是选项或结局，直接显示全文字，不打字
+    if (currentNode.type === 'choice' || currentNode.type === 'ending') {
+      setDisplayedText(fullText);
+    } else {
+      typeChar();
     }
-  }, [isAutoPlay, currentNode, settings.autoSpeed]);
 
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
+    };
+
+  }, [currentNode, gameState.currentNodeId]); // 依赖 currentNodeId 变化触发
+
+
+  // ==========================================
+  // 核心逻辑 2: 交互处理
+  // ==========================================
   const handleNext = useCallback(() => {
     if (!currentNode) return;
 
-    // 设置标记
+    // 如果文字还没打完，点击则瞬间显示全字
+    if (displayedText.length < (currentNode.text?.length || 0) && currentNode.type !== 'choice') {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      setDisplayedText(currentNode.text || '');
+      return;
+    }
+
+    // 只有打完了字才能进下一句
     if (currentNode.flag) {
       setGameState((prev) => ({
         ...prev,
@@ -101,7 +155,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         history: [...prev.history, prev.currentNodeId],
       }));
     }
-  }, [currentNode]);
+  }, [currentNode, displayedText]);
 
   const handleChoice = useCallback(
     (choice: { text: string; next: string; flag?: string; flagValue?: any }) => {
@@ -109,7 +163,6 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       if (choice.flag && choice.flagValue !== undefined) {
         newFlags[choice.flag] = choice.flagValue;
       }
-
       setGameState((prev) => ({
         ...prev,
         currentNodeId: choice.next,
@@ -120,14 +173,12 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     [gameState.flags]
   );
 
-  const handleSave = useCallback(
-    (slot: number) => {
+  // ... (保留你原来的 handleSave, handleLoad 等函数，完全不用动)
+  const handleSave = useCallback((slot: number) => {
       const screenshot = currentNode?.text || '游戏进行中';
       saveSystem.saveGame(slot, gameMetadata.title, screenshot, gameState.currentNodeId, gameState);
       setShowSaveMenu(false);
-    },
-    [currentNode, gameState]
-  );
+  }, [currentNode, gameState]);
 
   const handleLoad = useCallback((slot: number) => {
     const saveData = saveSystem.loadGame(slot);
@@ -164,10 +215,12 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     }
   }, [gameState.history]);
 
+  // ==========================================
   // 键盘快捷键
+  // ==========================================
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings) return;
+      if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings || showHistory) return;
 
       switch (e.key) {
         case ' ':
@@ -183,39 +236,44 @@ export const GameEngine: React.FC<GameEngineProps> = ({
           }
           break;
         case 'ArrowLeft':
-          handleBacklog();
+          handleBacklog(); // 这里是回退上一句
+          break;
+        case 'l': // 新增：按 L 键打开历史记录
+          setShowHistory(true);
           break;
         case 'a':
           setIsAutoPlay((prev) => !prev);
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentNode, showMenu, showSaveMenu, showLoadMenu, showGallery, showSettings, handleNext, handleQuickSave, handleBacklog]);
+  }, [currentNode, showMenu, showSaveMenu, showLoadMenu, showGallery, showSettings, showHistory, handleNext, handleQuickSave, handleBacklog]);
 
-  if (!currentNode) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center text-white">
-        <div className="text-center">
-          <p className="text-xl mb-4">游戏节点不存在</p>
-          <button
-            onClick={onReturnToMenu}
-            className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
-          >
-            返回主菜单
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!currentNode) return <div>Loading...</div>;
 
+  // ==========================================
+  // 渲染逻辑
+  // ==========================================
   const characterName = currentNode.character ? characters[currentNode.character]?.name : '';
+  
+  // 判断谁在说话
+  const isWanhuiSpeaking = currentNode.character === 'wanhui';
+  const isNarrator = currentNode.character === 'narrator' || !currentNode.character;
+  const isOtherSpeaking = !isWanhuiSpeaking && !isNarrator;
+
+  // 生成历史记录列表 (从 gameState.history 推导)
+  const historyList = gameState.history.map(nodeId => {
+     const node = storyNodes[nodeId];
+     if (!node || !node.text) return null;
+     const name = node.character ? characters[node.character]?.name : '';
+     return { name, text: node.text };
+  }).filter(item => item !== null);
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
-      {/* 背景图片 */}
+    <div className="fixed inset-0 bg-black overflow-hidden font-sans select-none">
+      
+      {/* 1. 背景层 */}
       <AnimatePresence mode="wait">
         {currentNode.background && (
           <motion.div
@@ -226,216 +284,175 @@ export const GameEngine: React.FC<GameEngineProps> = ({
             transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
-            <img
-              src={currentNode.background}
-              alt="背景"
-              className="w-full h-full object-cover"
-            />
+            <img src={currentNode.background} alt="BG" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/20" /> {/* 稍微压暗 */}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* CG显示 */}
+      {/* 2. CG层 */}
       <AnimatePresence>
         {currentNode.cg && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-black/80"
           >
-            <img src={currentNode.cg} alt="CG" className="w-full h-full object-cover" />
+            <img src={currentNode.cg} alt="CG" className="max-h-full max-w-full object-contain" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 角色立绘 */}
-      <AnimatePresence>
-        {currentNode.characterSprite && (
-          <motion.div
-            key={currentNode.characterSprite}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className={`absolute bottom-0 z-20 h-[70%] ${
-              currentNode.characterPosition === 'left'
-                ? 'left-0 md:left-[10%]'
-                : currentNode.characterPosition === 'right'
-                ? 'right-0 md:right-[10%]'
-                : 'left-1/2 -translate-x-1/2'
-            }`}
-          >
-            <img
-              src={currentNode.characterSprite}
-              alt={characterName}
-              className="h-full object-contain"
+      {/* 3. 新版双头像系统 (显示在对话框上方) */}
+      <div className="absolute bottom-[30vh] left-0 w-full flex justify-between px-[10%] items-end pointer-events-none z-20">
+        
+        {/* 左侧：万辉 */}
+        <motion.div 
+          animate={{ 
+            scale: isWanhuiSpeaking ? 1.1 : 1.0,
+            filter: isWanhuiSpeaking ? 'brightness(1.1)' : 'brightness(0.5)',
+            opacity: isWanhuiSpeaking ? 1 : 0.7
+          }}
+          className="transition-all duration-300 origin-bottom"
+        >
+          {characters.wanhui?.sprite && (
+            <img 
+              // 优先用剧情指定的表情，否则用默认
+              src={currentNode.characterSprite || characters.wanhui.sprite} 
+              alt="Wanhui" 
+              className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-full border-4 border-white/20 shadow-2xl"
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </motion.div>
 
-      {/* 对话框 */}
+        {/* 右侧：配角 */}
+        <motion.div 
+          animate={{ 
+            scale: isOtherSpeaking ? 1.1 : 1.0,
+            filter: isOtherSpeaking ? 'brightness(1.1)' : 'brightness(0.5)',
+            opacity: isOtherSpeaking ? 1 : 0.7
+          }}
+          className="transition-all duration-300 origin-bottom"
+        >
+          {rightChar?.sprite && (
+            <img 
+              src={rightChar.sprite} 
+              alt={rightChar.name} 
+              className="w-32 h-32 md:w-48 md:h-48 object-cover rounded-full border-4 border-white/20 shadow-2xl"
+            />
+          )}
+        </motion.div>
+      </div>
+
+      {/* 4. 对话框 (使用 displayedText) */}
       {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending') && currentNode.text && (
         <DialogueBox
           character={characterName}
-          text={currentNode.text}
+          text={displayedText} // 这里用打字机文字
           onNext={handleNext}
           isChoice={false}
+          isTyping={displayedText.length < currentNode.text.length} // 传递正在打字的状态
         />
       )}
 
-      {/* 选择面板 */}
+      {/* 5. 选择面板 */}
       {currentNode.type === 'choice' && currentNode.choices && (
         <ChoicePanel choices={currentNode.choices} onSelect={handleChoice} />
       )}
 
-      {/* 顶部工具栏 */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/50 to-transparent">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="text-white/80 hover:text-white transition-colors"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          <div className="text-white/60 text-sm hidden md:block">
-            Ctrl+S: 快速保存 | Space: 继续 | A: 自动播放
-          </div>
-        </div>
+      {/* 6. 顶部菜单按钮 */}
+      <div className="absolute top-4 right-4 z-50 flex gap-2">
+         {/* 自动播放提示 */}
+         {isAutoPlay && (
+            <div className="bg-blue-600/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 animate-pulse">
+              <SkipForward size={14} /> Auto
+            </div>
+         )}
+         <button onClick={() => setShowMenu(true)} className="bg-black/50 p-2 rounded-full hover:bg-white/20 text-white">
+           <Menu size={24} />
+         </button>
       </div>
 
-      {/* 快捷菜单 */}
+      {/* 7. 历史记录界面 (Modal) */}
+      {showHistory && (
+        <div className="absolute inset-0 z-[60] bg-black/90 flex flex-col p-8 animate-in fade-in duration-200">
+          <div className="flex justify-between items-center mb-6 border-b border-white/20 pb-4">
+            <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
+              <History /> 历史记录
+            </h2>
+            <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-white/20 rounded-full text-white">
+              <X />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+            {historyList.map((log, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                {log?.name && <span className="text-yellow-500 font-bold text-sm">{log.name}</span>}
+                <p className="text-gray-300 leading-relaxed text-lg">{log?.text}</p>
+              </div>
+            ))}
+            {/* 显示当前正在说的这一句 */}
+             <div className="flex flex-col gap-1 opacity-50">
+                {characterName && <span className="text-yellow-500 font-bold text-sm">{characterName}</span>}
+                <p className="text-gray-300 leading-relaxed text-lg">{displayedText}</p>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. 快捷菜单 (你的原版菜单，加了一个 History 按钮) */}
       <AnimatePresence>
         {showMenu && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-16 left-4 z-40 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 p-2 min-w-[200px]"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="absolute top-16 right-4 z-50 bg-gray-900/95 backdrop-blur-md rounded-xl border border-white/10 p-4 w-64 shadow-2xl"
           >
-            <button
-              onClick={handleQuickSave}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <Save className="w-5 h-5" />
-              快速保存
-            </button>
-            <button
-              onClick={() => {
-                setShowSaveMenu(true);
-                setShowMenu(false);
-              }}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <Save className="w-5 h-5" />
-              保存
-            </button>
-            <button
-              onClick={() => {
-                setShowLoadMenu(true);
-                setShowMenu(false);
-              }}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <FolderOpen className="w-5 h-5" />
-              读取
-            </button>
-            <button
-              onClick={handleBacklog}
-              disabled={gameState.history.length === 0}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors disabled:opacity-40"
-            >
-              <RotateCcw className="w-5 h-5" />
-              回退
-            </button>
-            <button
-              onClick={() => setIsAutoPlay(!isAutoPlay)}
-              className={`w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors ${
-                isAutoPlay ? 'bg-white/20' : ''
-              }`}
-            >
-              <SkipForward className="w-5 h-5" />
-              自动播放 {isAutoPlay ? '✓' : ''}
-            </button>
-            <button
-              onClick={() => {
-                setShowGallery(true);
-                setShowMenu(false);
-              }}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <ImageIcon className="w-5 h-5" />
-              画廊
-            </button>
-            <button
-              onClick={() => {
-                setShowSettings(true);
-                setShowMenu(false);
-              }}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-              设置
-            </button>
-            <div className="border-t border-white/20 my-2" />
-            <button
-              onClick={onReturnToMenu}
-              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
-            >
-              <RotateCcw className="w-5 h-5" />
-              返回主菜单
-            </button>
+            <div className="space-y-2">
+              <button onClick={() => { setShowHistory(true); setShowMenu(false); }} className="menu-btn">
+                <History className="w-5 h-5" /> 历史记录
+              </button>
+              <button onClick={handleQuickSave} className="menu-btn">
+                <Save className="w-5 h-5" /> 快速保存
+              </button>
+              <button onClick={() => { setShowSaveMenu(true); setShowMenu(false); }} className="menu-btn">
+                <Save className="w-5 h-5" /> 存档
+              </button>
+              <button onClick={() => { setShowLoadMenu(true); setShowMenu(false); }} className="menu-btn">
+                <FolderOpen className="w-5 h-5" /> 读档
+              </button>
+              <button onClick={() => setIsAutoPlay(!isAutoPlay)} className={`menu-btn ${isAutoPlay ? 'text-yellow-400' : ''}`}>
+                <SkipForward className="w-5 h-5" /> 自动播放
+              </button>
+              <button onClick={() => { setShowGallery(true); setShowMenu(false); }} className="menu-btn">
+                <ImageIcon className="w-5 h-5" /> 画廊
+              </button>
+              <button onClick={() => { setShowSettings(true); setShowMenu(false); }} className="menu-btn">
+                <Settings className="w-5 h-5" /> 设置
+              </button>
+              <div className="h-px bg-white/10 my-2" />
+              <button onClick={onReturnToMenu} className="menu-btn text-red-400 hover:bg-red-500/20">
+                <RotateCcw className="w-5 h-5" /> 返回标题
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 自动播放指示器 */}
-      {isAutoPlay && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute top-4 right-4 z-30 bg-blue-500/80 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center gap-2"
-        >
-          <SkipForward className="w-4 h-4" />
-          自动播放中
-        </motion.div>
-      )}
-
-      {/* 存档菜单 */}
-      {showSaveMenu && (
-        <SaveLoadMenu
-          mode="save"
-          saves={saveSystem.getAllSaves()}
-          onClose={() => setShowSaveMenu(false)}
-          onSave={handleSave}
-          onDelete={handleDeleteSave}
-        />
-      )}
-
-      {/* 读档菜单 */}
-      {showLoadMenu && (
-        <SaveLoadMenu
-          mode="load"
-          saves={saveSystem.getAllSaves()}
-          onClose={() => setShowLoadMenu(false)}
-          onLoad={handleLoad}
-          onDelete={handleDeleteSave}
-        />
-      )}
-
-      {/* 画廊 */}
-      {showGallery && (
-        <Gallery unlockedCGs={gameState.unlockedCGs} onClose={() => setShowGallery(false)} />
-      )}
-
-      {/* 设置 */}
-      {showSettings && (
-        <SettingsMenu
-          settings={settings}
-          onClose={() => setShowSettings(false)}
-          onSave={handleSettingsSave}
-        />
-      )}
+      {/* 9. 其他全屏界面 (存档、设置、画廊) */}
+      {showSaveMenu && <SaveLoadMenu mode="save" saves={saveSystem.getAllSaves()} onClose={() => setShowSaveMenu(false)} onSave={handleSave} onDelete={handleDeleteSave} />}
+      {showLoadMenu && <SaveLoadMenu mode="load" saves={saveSystem.getAllSaves()} onClose={() => setShowLoadMenu(false)} onLoad={handleLoad} onDelete={handleDeleteSave} />}
+      {showGallery && <Gallery unlockedCGs={gameState.unlockedCGs} onClose={() => setShowGallery(false)} />}
+      {showSettings && <SettingsMenu settings={settings} onClose={() => setShowSettings(false)} onSave={handleSettingsSave} />}
+      
+      {/* 简单的 CSS 辅助类 */}
+      <style>{`
+        .menu-btn {
+          @apply w-full flex items-center gap-3 text-white/90 hover:text-white hover:bg-white/10 px-4 py-3 rounded-lg transition-all text-left;
+        }
+      `}</style>
     </div>
   );
 };
