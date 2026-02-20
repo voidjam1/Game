@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   History,
   X,
+  Volume2, // 恢复音量图标
 } from 'lucide-react';
 import { DialogueNode, GameState, GameSettings, Character } from '../types/game';
 import { DialogueBox } from './DialogueBox';
@@ -54,12 +55,12 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   const [isAutoPlay, setIsAutoPlay] = useState(false);
 
   // === 核心状态：打字机、分行、头像 ===
-  const [displayedText, setDisplayedText] = useState(''); // 当前屏幕上显示的字
-  const [rightChar, setRightChar] = useState<Character | null>(null); // 配角立绘
+  const [displayedText, setDisplayedText] = useState('');
+  const [rightChar, setRightChar] = useState<Character | null>(null);
   
-  // === 新增：分行控制状态 ===
-  const [subLines, setSubLines] = useState<string[]>([]); // 当前节点拆分后的所有行
-  const [subLineIndex, setSubLineIndex] = useState(0);    // 当前正在显示第几行
+  // 分行控制
+  const [subLines, setSubLines] = useState<string[]>([]);
+  const [subLineIndex, setSubLineIndex] = useState(0);
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -67,12 +68,11 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   const currentNode = storyNodes[gameState.currentNodeId];
 
   // ==========================================
-  // 核心逻辑 1: 节点初始化 (拆分文本)
+  // 核心逻辑
   // ==========================================
   useEffect(() => {
     if (!currentNode) return;
 
-    // 1. 更新 CG 和 结局解锁 (保持不变)
     if (currentNode.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
       setGameState((prev) => ({ ...prev, unlockedCGs: [...prev.unlockedCGs, currentNode.cg!] }));
     }
@@ -80,73 +80,54 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       setGameState((prev) => ({ ...prev, unlockedEndings: [...prev.unlockedEndings, currentNode.flag!] }));
     }
 
-    // 2. 更新右侧立绘
     if (currentNode.character && currentNode.character !== 'narrator' && currentNode.character !== 'wanhui') {
       const char = characters[currentNode.character];
       if (char) setRightChar(char);
     }
 
-    // 3. 【关键修改】拆分文本
-    // 如果是选项或结局，不拆分，直接当做一行
+    // 拆分文本
     if (currentNode.type === 'choice' || currentNode.type === 'ending') {
       setSubLines([currentNode.text || '']);
     } else {
-      // 按照换行符 \n 拆分，并且过滤掉完全空白的行（可选）
       const rawText = currentNode.text || '';
       const lines = rawText.split('\n'); 
-      // 如果你想保留空行作为一个停顿，就直接用 split('\n')
-      // 如果你想去掉空行，可以用 .filter(line => line.trim() !== '')
       setSubLines(lines.length > 0 ? lines : ['']);
     }
     
-    // 重置到第一行
     setSubLineIndex(0);
     setDisplayedText('');
 
   }, [currentNode, gameState.currentNodeId]);
 
-
-  // ==========================================
-  // 核心逻辑 2: 打字机效果 (针对每一行)
-  // ==========================================
   useEffect(() => {
     if (!currentNode || subLines.length === 0) return;
 
-    // 获取当前要显示的那一行文字
     const targetText = subLines[subLineIndex] || '';
 
-    // 清理旧的计时器
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
 
     let currentIndex = 0;
-    const speed = 80; // 打字速度
+    const speed = 80;
 
-    // 定义打字函数
     const typeChar = () => {
-      // 如果当前显示的字还没达到目标长度
       if (currentIndex < targetText.length) {
         setDisplayedText(targetText.slice(0, currentIndex + 1));
         currentIndex++;
         typingTimeoutRef.current = setTimeout(typeChar, speed);
       } else {
-        // === 这一行打完了 ===
-        
-        // 如果开启了自动播放
         if (isAutoPlay && currentNode.type !== 'choice' && currentNode.type !== 'ending') {
           const delay = (11 - settings.autoSpeed) * 500;
           autoPlayTimeoutRef.current = setTimeout(() => {
-            handleNext(); // 自动触发下一步
+            handleNext(); 
           }, Math.max(delay, 1000));
         }
       }
     };
 
-    // 如果是选项或结局，直接显示（不打字）
     if (currentNode.type === 'choice' || currentNode.type === 'ending') {
       setDisplayedText(targetText);
     } else {
-      // 开始打字前先清空，防止上一句残留
       setDisplayedText(''); 
       typeChar();
     }
@@ -155,34 +136,24 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
     };
-  }, [subLines, subLineIndex, isAutoPlay, currentNode, settings.autoSpeed]); // 依赖 subLineIndex 变化
+  }, [subLines, subLineIndex, isAutoPlay, currentNode, settings.autoSpeed]);
 
-
-  // ==========================================
-  // 核心逻辑 3: 点击交互 (下一句/下一节点)
-  // ==========================================
   const handleNext = useCallback(() => {
     if (!currentNode || subLines.length === 0) return;
 
     const targetText = subLines[subLineIndex] || '';
 
-    // 1. 如果还在打字，瞬间显示全句
     if (displayedText.length < targetText.length && currentNode.type !== 'choice') {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       setDisplayedText(targetText);
       return;
     }
 
-    // 2. 如果打完了，检查还有没有下一行
     if (subLineIndex < subLines.length - 1) {
-      // 还有下一行，索引+1，触发 useEffect 重新打字
       setSubLineIndex(prev => prev + 1);
       return;
     }
 
-    // 3. 所有行都显示完了，执行跳转逻辑 (原来的逻辑)
-    
-    // 设置 flag
     if (currentNode.flag) {
       setGameState((prev) => ({
         ...prev,
@@ -190,9 +161,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       }));
     }
 
-    // 跳转 next
     if (currentNode.next) {
-      // 记录历史（记录整个节点的文本，而不是一行行记录，这样回看比较方便）
       setGameState((prev) => ({
         ...prev,
         currentNodeId: currentNode.next!,
@@ -201,7 +170,6 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     }
   }, [currentNode, displayedText, subLines, subLineIndex]);
 
-  // (保留原来的 handleChoice, handleSave 等...)
   const handleChoice = useCallback(
     (choice: { text: string; next: string; flag?: string; flagValue?: any }) => {
       const newFlags = { ...gameState.flags };
@@ -259,7 +227,6 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     }
   }, [gameState.history]);
 
-  // 键盘事件
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings || showHistory) return;
@@ -296,20 +263,17 @@ export const GameEngine: React.FC<GameEngineProps> = ({
 
   // 渲染逻辑
   const characterName = currentNode.character ? characters[currentNode.character]?.name : '';
-  
   const isWanhuiSpeaking = currentNode.character === 'wanhui';
   const isNarrator = currentNode.character === 'narrator' || !currentNode.character;
   const isOtherSpeaking = !isWanhuiSpeaking && !isNarrator;
 
-  // 历史记录生成
   const historyList = gameState.history.map(nodeId => {
      const node = storyNodes[nodeId];
      if (!node || !node.text) return null;
      const name = node.character ? characters[node.character]?.name : '';
-     return { name, text: node.text }; // 历史记录显示完整文本
+     return { name, text: node.text };
   }).filter(item => item !== null);
 
-  // 判断是否是最后一行（用于显示选项）
   const isLastLine = subLineIndex === subLines.length - 1;
   const isTypingFinished = displayedText.length === (subLines[subLineIndex] || '').length;
   const showChoices = currentNode.type === 'choice' && isLastLine && isTypingFinished;
@@ -352,12 +316,9 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending' || currentNode.type === 'choice') && (
         <DialogueBox
           character={characterName}
-          text={displayedText} // 显示当前这一行的字
+          text={displayedText}
           onNext={handleNext}
-          
-          // 只有打字中才显示光标
           isTyping={!isTypingFinished}
-          
           leftSprite={currentNode.characterSprite || characters.wanhui?.sprite}
           rightSprite={rightChar?.sprite}
           isLeftSpeaking={isWanhuiSpeaking}
@@ -365,42 +326,104 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         />
       )}
 
-      {/* 4. 选择面板 (只有在最后一行文字显示完后才出现) */}
+      {/* 4. 选择面板 */}
       {showChoices && currentNode.choices && (
         <ChoicePanel choices={currentNode.choices} onSelect={handleChoice} />
       )}
 
-      {/* 5. 顶部菜单按钮 */}
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
-         {isAutoPlay && (
-            <div className="bg-red-900/80 text-white px-3 py-1 text-sm flex items-center gap-2 animate-pulse border border-red-500/30">
-              <SkipForward size={14} /> Auto
-            </div>
-         )}
-         <button onClick={() => setShowMenu(true)} className="bg-black/80 border border-white/20 p-2 hover:bg-white/10 text-white transition-colors">
-           <Menu size={24} />
-         </button>
+      {/* ============================================================ */}
+      {/* 5. 顶部工具栏 (恢复原版布局) */}
+      {/* ============================================================ */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-4 bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          {/* 左侧菜单按钮 */}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="text-white/80 hover:text-white transition-colors flex items-center gap-2"
+          >
+            <Menu className="w-8 h-8 drop-shadow-lg" />
+            <span className="font-bold tracking-wider text-sm hidden md:inline">MENU</span>
+          </button>
+
+          {/* 右侧自动播放状态 + 快捷键提示 */}
+          <div className="flex items-center gap-4">
+             {isAutoPlay && (
+                <div className="bg-red-900/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 animate-pulse border border-red-500/30">
+                  <SkipForward size={14} /> Auto Play
+                </div>
+             )}
+             <div className="text-white/60 text-xs hidden md:block">
+               Ctrl+S: 快速保存 | Space: 继续 | L: 历史记录
+             </div>
+          </div>
+        </div>
       </div>
 
-      {/* 6. 历史记录 (显示完整段落) */}
+      {/* ============================================================ */}
+      {/* 6. 快捷菜单 (恢复原版 UI) */}
+      {/* ============================================================ */}
+      <AnimatePresence>
+        {showMenu && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }} // 从左侧滑出
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="absolute top-16 left-4 z-40 bg-black/90 backdrop-blur-md rounded-lg border border-white/20 p-2 min-w-[220px] shadow-2xl"
+          >
+            <div className="flex flex-col gap-1">
+              <button onClick={() => { setShowHistory(true); setShowMenu(false); }} className="menu-btn">
+                <History className="w-5 h-5" /> 历史记录
+              </button>
+              <button onClick={handleQuickSave} className="menu-btn">
+                <Save className="w-5 h-5" /> 快速保存
+              </button>
+              <button onClick={() => { setShowSaveMenu(true); setShowMenu(false); }} className="menu-btn">
+                <Save className="w-5 h-5" /> 保存进度
+              </button>
+              <button onClick={() => { setShowLoadMenu(true); setShowMenu(false); }} className="menu-btn">
+                <FolderOpen className="w-5 h-5" /> 读取进度
+              </button>
+              <button onClick={handleBacklog} disabled={gameState.history.length === 0} className="menu-btn disabled:opacity-30">
+                <RotateCcw className="w-5 h-5" /> 回退上一句
+              </button>
+              <button onClick={() => setIsAutoPlay(!isAutoPlay)} className={`menu-btn ${isAutoPlay ? 'text-red-400 bg-white/10' : ''}`}>
+                <SkipForward className="w-5 h-5" /> 自动播放 {isAutoPlay ? '✓' : ''}
+              </button>
+              <button onClick={() => { setShowGallery(true); setShowMenu(false); }} className="menu-btn">
+                <ImageIcon className="w-5 h-5" /> 鉴赏画廊
+              </button>
+              <button onClick={() => { setShowSettings(true); setShowMenu(false); }} className="menu-btn">
+                <Settings className="w-5 h-5" /> 系统设置
+              </button>
+              
+              <div className="border-t border-white/20 my-2" />
+              
+              <button onClick={onReturnToMenu} className="menu-btn text-red-400 hover:bg-red-500/20">
+                <RotateCcw className="w-5 h-5" /> 返回主菜单
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 7. 历史记录 (Modal) */}
       {showHistory && (
         <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col p-8 animate-in fade-in duration-200">
           <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
             <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-200">
               <History /> 历史记录
             </h2>
-            <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-white/10 text-white">
-              <X />
+            <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-white/10 text-white transition-colors rounded-full">
+              <X className="w-6 h-6" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-6 pr-4">
+          <div className="flex-1 overflow-y-auto space-y-6 pr-4 scrollbar-thin scrollbar-thumb-gray-600">
             {historyList.map((log, i) => (
               <div key={i} className="flex flex-col gap-1 border-b border-gray-800 pb-4">
                 {log?.name && <span className="text-red-500 font-bold text-sm tracking-wider">{log.name}</span>}
                 <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{log?.text}</p>
               </div>
             ))}
-             {/* 当前显示的完整文本（方便回看当前句） */}
              <div className="flex flex-col gap-1 opacity-50">
                 {characterName && <span className="text-red-500 font-bold text-sm tracking-wider">{characterName}</span>}
                 <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{currentNode.text}</p>
@@ -409,54 +432,16 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         </div>
       )}
 
-      {/* 7. 快捷菜单 */}
-      <AnimatePresence>
-        {showMenu && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="absolute top-16 right-4 z-50 bg-black border border-gray-700 p-4 w-64 shadow-2xl"
-          >
-            <div className="space-y-2">
-              <button onClick={() => { setShowHistory(true); setShowMenu(false); }} className="menu-btn">
-                <History className="w-5 h-5" /> 历史记录
-              </button>
-              <button onClick={handleQuickSave} className="menu-btn">
-                <Save className="w-5 h-5" /> 快速保存
-              </button>
-              <button onClick={() => { setShowSaveMenu(true); setShowMenu(false); }} className="menu-btn">
-                <Save className="w-5 h-5" /> 存档
-              </button>
-              <button onClick={() => { setShowLoadMenu(true); setShowMenu(false); }} className="menu-btn">
-                <FolderOpen className="w-5 h-5" /> 读档
-              </button>
-              <button onClick={() => setIsAutoPlay(!isAutoPlay)} className={`menu-btn ${isAutoPlay ? 'text-red-500' : ''}`}>
-                <SkipForward className="w-5 h-5" /> 自动播放
-              </button>
-              <button onClick={() => { setShowGallery(true); setShowMenu(false); }} className="menu-btn">
-                <ImageIcon className="w-5 h-5" /> 画廊
-              </button>
-              <button onClick={() => { setShowSettings(true); setShowMenu(false); }} className="menu-btn">
-                <Settings className="w-5 h-5" /> 设置
-              </button>
-              <div className="h-px bg-gray-700 my-2" />
-              <button onClick={onReturnToMenu} className="menu-btn text-red-400 hover:bg-red-900/20">
-                <RotateCcw className="w-5 h-5" /> 返回标题
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* 8. 其他界面 */}
       {showSaveMenu && <SaveLoadMenu mode="save" saves={saveSystem.getAllSaves()} onClose={() => setShowSaveMenu(false)} onSave={handleSave} onDelete={handleDeleteSave} />}
       {showLoadMenu && <SaveLoadMenu mode="load" saves={saveSystem.getAllSaves()} onClose={() => setShowLoadMenu(false)} onLoad={handleLoad} onDelete={handleDeleteSave} />}
       {showGallery && <Gallery unlockedCGs={gameState.unlockedCGs} onClose={() => setShowGallery(false)} />}
       {showSettings && <SettingsMenu settings={settings} onClose={() => setShowSettings(false)} onSave={handleSettingsSave} />}
       
+      {/* 样式定义 */}
       <style>{`
         .menu-btn {
-          @apply w-full flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/10 px-4 py-3 transition-all text-left border border-transparent hover:border-gray-600;
+          @apply w-full flex items-center gap-3 text-white/90 hover:text-white hover:bg-white/10 px-4 py-3 rounded transition-all text-left text-sm font-medium;
         }
       `}</style>
     </div>
