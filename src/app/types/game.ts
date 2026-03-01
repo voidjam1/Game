@@ -6,6 +6,7 @@ export interface Character {
   id: string;
   name: string;
   sprite: string; // 图片URL或路径
+  avatar?: string; // 头像图片URL（用于对话框）
 }
 
 export interface DialogueNode {
@@ -22,6 +23,8 @@ export interface DialogueNode {
   flag?: string; // 设置的标记
   condition?: { flag: string; value: any }; // 条件判断
   endingType?: string; // 结局类型
+  chapter?: string; // 章节名称
+  achievement?: string; // 触发的成就ID
 }
 
 export interface Choice {
@@ -35,8 +38,18 @@ export interface GameState {
   currentNodeId: string;
   flags: Record<string, any>; // 游戏标记
   history: string[]; // 历史节点ID
+  dialogueHistory: DialogueHistoryEntry[]; // 对话历史
   unlockedCGs: string[]; // 已解锁的CG
   unlockedEndings: string[]; // 已解锁的结局
+  achievements: string[]; // 已解锁的成就
+  currentChapter?: string; // 当前章节
+}
+
+export interface DialogueHistoryEntry {
+  nodeId: string;
+  character: string;
+  text: string;
+  timestamp: number;
 }
 
 export interface SaveData {
@@ -46,6 +59,7 @@ export interface SaveData {
   screenshot: string; // 当前场景截图描述
   currentNode: string;
   state: GameState;
+  chapter?: string; // 存档所属章节
 }
 
 export interface GameSettings {
@@ -54,4 +68,11 @@ export interface GameSettings {
   bgmVolume: number; // 背景音乐音量 (0-100)
   seVolume: number; // 音效音量 (0-100)
   voiceVolume: number; // 语音音量 (0-100)
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon?: string;
 }

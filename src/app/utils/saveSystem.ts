@@ -53,7 +53,7 @@ const safeRemoveItem = (key: string): void => {
 
 export const saveSystem = {
   // 保存游戏
-  saveGame(slot: number, gameName: string, screenshot: string, currentNode: string, state: GameState): void {
+  saveGame(slot: number, gameName: string, screenshot: string, currentNode: string, state: GameState, chapter?: string): void {
     const saveData: SaveData = {
       slot,
       timestamp: Date.now(),
@@ -61,6 +61,7 @@ export const saveSystem = {
       screenshot,
       currentNode,
       state,
+      chapter,
     };
     safeSetItem(`${SAVE_PREFIX}${slot}`, JSON.stringify(saveData));
   },
@@ -123,8 +124,8 @@ export const saveSystem = {
   },
 
   // 快速保存
-  quickSave(gameName: string, screenshot: string, currentNode: string, state: GameState): void {
-    this.saveGame(0, gameName, screenshot, currentNode, state);
+  quickSave(gameName: string, screenshot: string, currentNode: string, state: GameState, chapter?: string): void {
+    this.saveGame(0, gameName, screenshot, currentNode, state, chapter);
   },
 
   // 快速读取

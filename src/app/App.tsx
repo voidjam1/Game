@@ -4,12 +4,13 @@ import { GameEngine } from "./components/GameEngine";
 import { SaveLoadMenu } from "./components/SaveLoadMenu";
 import { Gallery } from "./components/Gallery";
 import { SettingsMenu } from "./components/SettingsMenu";
+import { AchievementsPanel } from "./components/AchievementsPanel";
 import { DebugInfo } from "./components/DebugInfo";
 import { saveSystem } from "./utils/saveSystem";
-import { gameMetadata } from "./data/story";
+import { gameMetadata, achievements } from "./data/story";
 import { GameState } from "./types/game";
 
-type Screen = "menu" | "game" | "load" | "gallery" | "settings";
+type Screen = "menu" | "game" | "load" | "gallery" | "settings" | "achievements";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -21,6 +22,18 @@ export default function App() {
   );
 
   const quickSave = saveSystem.quickLoad();
+
+  // 获取所有已解锁的成就（从所有存档中收集）
+  const getAllUnlockedAchievements = (): string[] => {
+    const allSaves = saveSystem.getAllSaves();
+    const achievementSet = new Set<string>();
+    allSaves.forEach((save) => {
+      if (save) {
+        save.state.achievements?.forEach((achievement) => achievementSet.add(achievement));
+      }
+    });
+    return Array.from(achievementSet);
+  };
 
   const handleNewGame = () => {
     setLoadedState(undefined);
@@ -74,7 +87,9 @@ export default function App() {
           onLoad={() => setScreen("load")}
           onGallery={() => setScreen("gallery")}
           onSettings={() => setScreen("settings")}
+          onAchievements={() => setScreen("achievements")}
           hasSave={!!quickSave}
+          // backgroundImage="https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1600" // 可以在这里添加标题画面背景
         />
       )}
 
@@ -112,6 +127,14 @@ export default function App() {
           settings={settings}
           onClose={() => setScreen("menu")}
           onSave={handleSettingsSave}
+        />
+      )}
+
+      {screen === "achievements" && (
+        <AchievementsPanel
+          allAchievements={achievements}
+          unlockedAchievements={getAllUnlockedAchievements()}
+          onClose={() => setScreen("menu")}
         />
       )}
     </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Menu,
@@ -8,18 +8,20 @@ import {
   RotateCcw,
   SkipForward,
   Image as ImageIcon,
-  History,
-  X,
-  Volume2, // 恢复音量图标
+  Trophy,
+  Clock,
 } from 'lucide-react';
-import { DialogueNode, GameState, GameSettings, Character } from '../types/game';
-import { DialogueBox } from './DialogueBox';
+import { DialogueNode, GameState, GameSettings, Achievement } from '../types/game';
+import { DialogueBoxNew } from './DialogueBoxNew';
 import { ChoicePanel } from './ChoicePanel';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { Gallery } from './Gallery';
 import { SettingsMenu } from './SettingsMenu';
+import { DialogueHistoryPanel } from './DialogueHistoryPanel';
+import { AchievementsPanel } from './AchievementsPanel';
+import { AchievementToast } from './AchievementToast';
 import { saveSystem } from '../utils/saveSystem';
-import { storyNodes, characters, gameMetadata } from '../data/story';
+import { storyNodes, characters, gameMetadata, achievements, chapters } from '../data/story';
 
 interface GameEngineProps {
   onReturnToMenu: () => void;
@@ -32,128 +34,107 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   startNode,
   loadedState,
 }) => {
-  // === 基础状态 ===
   const [gameState, setGameState] = useState<GameState>(
     loadedState || {
       currentNodeId: startNode || gameMetadata.startNode,
       flags: {},
       history: [],
+      dialogueHistory: [],
       unlockedCGs: [],
       unlockedEndings: [],
+      achievements: [],
+      currentChapter: undefined,
     }
   );
 
   const [settings, setSettings] = useState<GameSettings>(saveSystem.loadSettings());
-  
-  // === 界面开关 ===
   const [showMenu, setShowMenu] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const [showLoadMenu, setShowLoadMenu] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
-
-  // === 核心状态：打字机、分行、头像 ===
-  const [displayedText, setDisplayedText] = useState('');
-  const [rightChar, setRightChar] = useState<Character | null>(null);
-  
-  // 分行控制
-  const [subLines, setSubLines] = useState<string[]>([]);
-  const [subLineIndex, setSubLineIndex] = useState(0);
-  
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const autoPlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
 
   const currentNode = storyNodes[gameState.currentNodeId];
 
-  // ==========================================
-  // 核心逻辑
-  // ==========================================
+  // 处理CG解锁
   useEffect(() => {
-    if (!currentNode) return;
-
-    if (currentNode.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
-      setGameState((prev) => ({ ...prev, unlockedCGs: [...prev.unlockedCGs, currentNode.cg!] }));
+    if (currentNode?.cg && !gameState.unlockedCGs.includes(currentNode.cg)) {
+      setGameState((prev) => ({
+        ...prev,
+        unlockedCGs: [...prev.unlockedCGs, currentNode.cg!],
+      }));
     }
-    if (currentNode.type === 'ending' && currentNode.flag && !gameState.unlockedEndings.includes(currentNode.flag)) {
-      setGameState((prev) => ({ ...prev, unlockedEndings: [...prev.unlockedEndings, currentNode.flag!] }));
-    }
+  }, [currentNode, gameState.unlockedCGs]);
 
-    if (currentNode.character && currentNode.character !== 'narrator' && currentNode.character !== 'wanhui') {
-      const char = characters[currentNode.character];
-      if (char) setRightChar(char);
-    }
-
-    // 拆分文本
-    if (currentNode.type === 'choice' || currentNode.type === 'ending') {
-      setSubLines([currentNode.text || '']);
-    } else {
-      const rawText = currentNode.text || '';
-      const lines = rawText.split('\n'); 
-      setSubLines(lines.length > 0 ? lines : ['']);
-    }
-    
-    setSubLineIndex(0);
-    setDisplayedText('');
-
-  }, [currentNode, gameState.currentNodeId]);
-
+  // 处理结局解锁
   useEffect(() => {
-    if (!currentNode || subLines.length === 0) return;
-
-    const targetText = subLines[subLineIndex] || '';
-
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
-
-    let currentIndex = 0;
-    const speed = 80;
-
-    const typeChar = () => {
-      if (currentIndex < targetText.length) {
-        setDisplayedText(targetText.slice(0, currentIndex + 1));
-        currentIndex++;
-        typingTimeoutRef.current = setTimeout(typeChar, speed);
-      } else {
-        if (isAutoPlay && currentNode.type !== 'choice' && currentNode.type !== 'ending') {
-          const delay = (11 - settings.autoSpeed) * 500;
-          autoPlayTimeoutRef.current = setTimeout(() => {
-            handleNext(); 
-          }, Math.max(delay, 1000));
-        }
+    if (currentNode?.type === 'ending' && currentNode.flag) {
+      if (!gameState.unlockedEndings.includes(currentNode.flag)) {
+        setGameState((prev) => ({
+          ...prev,
+          unlockedEndings: [...prev.unlockedEndings, currentNode.flag!],
+        }));
       }
-    };
-
-    if (currentNode.type === 'choice' || currentNode.type === 'ending') {
-      setDisplayedText(targetText);
-    } else {
-      setDisplayedText(''); 
-      typeChar();
     }
+  }, [currentNode, gameState.unlockedEndings]);
 
-    return () => {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      if (autoPlayTimeoutRef.current) clearTimeout(autoPlayTimeoutRef.current);
-    };
-  }, [subLines, subLineIndex, isAutoPlay, currentNode, settings.autoSpeed]);
+  // 处理章节更新
+  useEffect(() => {
+    if (currentNode?.chapter && currentNode.chapter !== gameState.currentChapter) {
+      setGameState((prev) => ({
+        ...prev,
+        currentChapter: currentNode.chapter,
+      }));
+    }
+  }, [currentNode, gameState.currentChapter]);
+
+  // 处理成就解锁
+  useEffect(() => {
+    if (currentNode?.achievement && !gameState.achievements.includes(currentNode.achievement)) {
+      const achievement = achievements[currentNode.achievement];
+      if (achievement) {
+        setGameState((prev) => ({
+          ...prev,
+          achievements: [...prev.achievements, currentNode.achievement!],
+        }));
+        setNewAchievement(achievement);
+      }
+    }
+  }, [currentNode, gameState.achievements]);
+
+  // 添加对话到历史记录
+  useEffect(() => {
+    if (currentNode && currentNode.text && (currentNode.type === 'dialogue' || currentNode.type === 'scene')) {
+      const characterName = currentNode.character ? characters[currentNode.character]?.name || '' : '';
+      const entry = {
+        nodeId: currentNode.id,
+        character: characterName,
+        text: currentNode.text,
+        timestamp: Date.now(),
+      };
+      
+      // 避免重复添加相同节点
+      setGameState((prev) => {
+        const lastEntry = prev.dialogueHistory[prev.dialogueHistory.length - 1];
+        if (lastEntry && lastEntry.nodeId === entry.nodeId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          dialogueHistory: [...prev.dialogueHistory, entry],
+        };
+      });
+    }
+  }, [currentNode]);
 
   const handleNext = useCallback(() => {
-    if (!currentNode || subLines.length === 0) return;
+    if (!currentNode) return;
 
-    const targetText = subLines[subLineIndex] || '';
-
-    if (displayedText.length < targetText.length && currentNode.type !== 'choice') {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      setDisplayedText(targetText);
-      return;
-    }
-
-    if (subLineIndex < subLines.length - 1) {
-      setSubLineIndex(prev => prev + 1);
-      return;
-    }
-
+    // 设置标记
     if (currentNode.flag) {
       setGameState((prev) => ({
         ...prev,
@@ -168,7 +149,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         history: [...prev.history, prev.currentNodeId],
       }));
     }
-  }, [currentNode, displayedText, subLines, subLineIndex]);
+  }, [currentNode]);
 
   const handleChoice = useCallback(
     (choice: { text: string; next: string; flag?: string; flagValue?: any }) => {
@@ -176,6 +157,7 @@ export const GameEngine: React.FC<GameEngineProps> = ({
       if (choice.flag && choice.flagValue !== undefined) {
         newFlags[choice.flag] = choice.flagValue;
       }
+
       setGameState((prev) => ({
         ...prev,
         currentNodeId: choice.next,
@@ -186,11 +168,15 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     [gameState.flags]
   );
 
-  const handleSave = useCallback((slot: number) => {
-      const screenshot = displayedText || '游戏进行中';
-      saveSystem.saveGame(slot, gameMetadata.title, screenshot, gameState.currentNodeId, gameState);
+  const handleSave = useCallback(
+    (slot: number) => {
+      const screenshot = currentNode?.text || '游戏进行中';
+      const chapter = gameState.currentChapter ? chapters[gameState.currentChapter as keyof typeof chapters] : undefined;
+      saveSystem.saveGame(slot, gameMetadata.title, screenshot, gameState.currentNodeId, gameState, chapter);
       setShowSaveMenu(false);
-  }, [displayedText, gameState]);
+    },
+    [currentNode, gameState]
+  );
 
   const handleLoad = useCallback((slot: number) => {
     const saveData = saveSystem.loadGame(slot);
@@ -212,9 +198,10 @@ export const GameEngine: React.FC<GameEngineProps> = ({
   }, []);
 
   const handleQuickSave = useCallback(() => {
-    const screenshot = displayedText || '游戏进行中';
-    saveSystem.quickSave(gameMetadata.title, screenshot, gameState.currentNodeId, gameState);
-  }, [displayedText, gameState]);
+    const screenshot = currentNode?.text || '游戏进行中';
+    const chapter = gameState.currentChapter ? chapters[gameState.currentChapter as keyof typeof chapters] : undefined;
+    saveSystem.quickSave(gameMetadata.title, screenshot, gameState.currentNodeId, gameState, chapter);
+  }, [currentNode, gameState]);
 
   const handleBacklog = useCallback(() => {
     if (gameState.history.length > 0) {
@@ -227,9 +214,10 @@ export const GameEngine: React.FC<GameEngineProps> = ({
     }
   }, [gameState.history]);
 
+  // 键盘快捷键
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings || showHistory) return;
+      if (showMenu || showSaveMenu || showLoadMenu || showGallery || showSettings || showHistory || showAchievements) return;
 
       switch (e.key) {
         case ' ':
@@ -247,41 +235,42 @@ export const GameEngine: React.FC<GameEngineProps> = ({
         case 'ArrowLeft':
           handleBacklog();
           break;
-        case 'l':
-          setShowHistory(true);
-          break;
         case 'a':
           setIsAutoPlay((prev) => !prev);
           break;
+        case 'h':
+          setShowHistory(true);
+          break;
       }
     };
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentNode, showMenu, showSaveMenu, showLoadMenu, showGallery, showSettings, showHistory, handleNext, handleQuickSave, handleBacklog]);
+  }, [currentNode, showMenu, showSaveMenu, showLoadMenu, showGallery, showSettings, showHistory, showAchievements, handleNext, handleQuickSave, handleBacklog]);
 
-  if (!currentNode) return <div>Loading...</div>;
+  if (!currentNode) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center text-white">
+        <div className="text-center">
+          <p className="text-xl mb-4">游戏节点不存在</p>
+          <button
+            onClick={onReturnToMenu}
+            className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-lg transition-colors"
+          >
+            返回主菜单
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  // 渲染逻辑
   const characterName = currentNode.character ? characters[currentNode.character]?.name : '';
-  const isWanhuiSpeaking = currentNode.character === 'wanhui';
-  const isNarrator = currentNode.character === 'narrator' || !currentNode.character;
-  const isOtherSpeaking = !isWanhuiSpeaking && !isNarrator;
-
-  const historyList = gameState.history.map(nodeId => {
-     const node = storyNodes[nodeId];
-     if (!node || !node.text) return null;
-     const name = node.character ? characters[node.character]?.name : '';
-     return { name, text: node.text };
-  }).filter(item => item !== null);
-
-  const isLastLine = subLineIndex === subLines.length - 1;
-  const isTypingFinished = displayedText.length === (subLines[subLineIndex] || '').length;
-  const showChoices = currentNode.type === 'choice' && isLastLine && isTypingFinished;
+  const characterData = currentNode.character ? characters[currentNode.character] : undefined;
+  const protagonistData = characters['wanhui'];
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden font-sans select-none">
-      
-      {/* 1. 背景层 */}
+    <div className="fixed inset-0 bg-black overflow-hidden">
+      {/* 背景图片 */}
       <AnimatePresence mode="wait">
         {currentNode.background && (
           <motion.div
@@ -292,158 +281,239 @@ export const GameEngine: React.FC<GameEngineProps> = ({
             transition={{ duration: 0.5 }}
             className="absolute inset-0"
           >
-            <img src={currentNode.background} alt="BG" className="w-full h-full object-cover opacity-60" />
-            <div className="absolute inset-0 bg-black/40" />
+            <img
+              src={currentNode.background}
+              alt="背景"
+              className="w-full h-full object-cover"
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 2. CG层 */}
+      {/* CG显示 */}
       <AnimatePresence>
         {currentNode.cg && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 flex items-center justify-center bg-black/90"
+            className="absolute inset-0 z-10"
           >
-            <img src={currentNode.cg} alt="CG" className="max-h-full max-w-full object-contain" />
+            <img src={currentNode.cg} alt="CG" className="w-full h-full object-cover" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 3. 对话框 (集成头像) */}
-      {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending' || currentNode.type === 'choice') && (
-        <DialogueBox
+      {/* 对话框 */}
+      {(currentNode.type === 'dialogue' || currentNode.type === 'scene' || currentNode.type === 'ending') && currentNode.text && (
+        <DialogueBoxNew
           character={characterName}
-          text={displayedText}
+          characterData={characterData}
+          text={currentNode.text}
           onNext={handleNext}
-          isTyping={!isTypingFinished}
-          leftSprite={currentNode.characterSprite || characters.wanhui?.sprite}
-          rightSprite={rightChar?.sprite}
-          isLeftSpeaking={isWanhuiSpeaking}
-          isRightSpeaking={isOtherSpeaking}
+          isChoice={false}
+          textSpeed={settings.textSpeed}
+          isAutoPlay={isAutoPlay}
+          protagonistAvatar={protagonistData?.avatar}
+          protagonistName={protagonistData?.name}
         />
       )}
 
-      {/* 4. 选择面板 */}
-      {showChoices && currentNode.choices && (
+      {/* 选择面板 */}
+      {currentNode.type === 'choice' && currentNode.choices && (
         <ChoicePanel choices={currentNode.choices} onSelect={handleChoice} />
       )}
 
-      {/* ============================================================ */}
-      {/* 5. 顶部工具栏 (恢复原版布局) */}
-      {/* ============================================================ */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4 bg-gradient-to-b from-black/80 to-transparent">
+      {/* 顶部工具栏 */}
+      <div className="absolute top-0 left-0 right-0 z-30 p-4 bg-gradient-to-b from-black/50 to-transparent">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          {/* 左侧菜单按钮 */}
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="text-white/80 hover:text-white transition-colors flex items-center gap-2"
+            className="text-white/80 hover:text-white transition-colors"
           >
-            <Menu className="w-8 h-8 drop-shadow-lg" />
-            <span className="font-bold tracking-wider text-sm hidden md:inline">MENU</span>
+            <Menu className="w-6 h-6" />
           </button>
-
-          {/* 右侧自动播放状态 + 快捷键提示 */}
-          <div className="flex items-center gap-4">
-             {isAutoPlay && (
-                <div className="bg-red-900/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2 animate-pulse border border-red-500/30">
-                  <SkipForward size={14} /> Auto Play
-                </div>
-             )}
-             <div className="text-white/60 text-xs hidden md:block">
-               Ctrl+S: 快速保存 | Space: 继续 | L: 历史记录
-             </div>
+          <div className="text-white/60 text-xs md:text-sm hidden md:block">
+            Ctrl+S: 快速保存 | Space: 继续 | A: 自动播放 | H: 历史
           </div>
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* 6. 快捷菜单 (恢复原版 UI) */}
-      {/* ============================================================ */}
+      {/* 快捷菜单 */}
       <AnimatePresence>
         {showMenu && (
           <motion.div
-            initial={{ opacity: 0, x: -20 }} // 从左侧滑出
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="absolute top-16 left-4 z-40 bg-black/90 backdrop-blur-md rounded-lg border border-white/20 p-2 min-w-[220px] shadow-2xl"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-16 left-4 z-40 bg-black/90 backdrop-blur-sm rounded-lg border border-white/20 p-2 min-w-[200px]"
           >
-            <div className="flex flex-col gap-1">
-              <button onClick={() => { setShowHistory(true); setShowMenu(false); }} className="menu-btn">
-                <History className="w-5 h-5" /> 历史记录
-              </button>
-              <button onClick={handleQuickSave} className="menu-btn">
-                <Save className="w-5 h-5" /> 快速保存
-              </button>
-              <button onClick={() => { setShowSaveMenu(true); setShowMenu(false); }} className="menu-btn">
-                <Save className="w-5 h-5" /> 保存进度
-              </button>
-              <button onClick={() => { setShowLoadMenu(true); setShowMenu(false); }} className="menu-btn">
-                <FolderOpen className="w-5 h-5" /> 读取进度
-              </button>
-              <button onClick={handleBacklog} disabled={gameState.history.length === 0} className="menu-btn disabled:opacity-30">
-                <RotateCcw className="w-5 h-5" /> 回退上一句
-              </button>
-              <button onClick={() => setIsAutoPlay(!isAutoPlay)} className={`menu-btn ${isAutoPlay ? 'text-red-400 bg-white/10' : ''}`}>
-                <SkipForward className="w-5 h-5" /> 自动播放 {isAutoPlay ? '✓' : ''}
-              </button>
-              <button onClick={() => { setShowGallery(true); setShowMenu(false); }} className="menu-btn">
-                <ImageIcon className="w-5 h-5" /> 鉴赏画廊
-              </button>
-              <button onClick={() => { setShowSettings(true); setShowMenu(false); }} className="menu-btn">
-                <Settings className="w-5 h-5" /> 系统设置
-              </button>
-              
-              <div className="border-t border-white/20 my-2" />
-              
-              <button onClick={onReturnToMenu} className="menu-btn text-red-400 hover:bg-red-500/20">
-                <RotateCcw className="w-5 h-5" /> 返回主菜单
-              </button>
-            </div>
+            <button
+              onClick={handleQuickSave}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <Save className="w-5 h-5" />
+              快速保存
+            </button>
+            <button
+              onClick={() => {
+                setShowSaveMenu(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <Save className="w-5 h-5" />
+              保存
+            </button>
+            <button
+              onClick={() => {
+                setShowLoadMenu(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <FolderOpen className="w-5 h-5" />
+              读取
+            </button>
+            <button
+              onClick={handleBacklog}
+              disabled={gameState.history.length === 0}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors disabled:opacity-40"
+            >
+              <RotateCcw className="w-5 h-5" />
+              回退
+            </button>
+            <button
+              onClick={() => {
+                setShowHistory(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <Clock className="w-5 h-5" />
+              对话历史
+            </button>
+            <button
+              onClick={() => setIsAutoPlay(!isAutoPlay)}
+              className={`w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors ${
+                isAutoPlay ? 'bg-white/20' : ''
+              }`}
+            >
+              <SkipForward className="w-5 h-5" />
+              自动播放 {isAutoPlay ? '✓' : ''}
+            </button>
+            <button
+              onClick={() => {
+                setShowGallery(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <ImageIcon className="w-5 h-5" />
+              画廊
+            </button>
+            <button
+              onClick={() => {
+                setShowAchievements(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <Trophy className="w-5 h-5" />
+              成就
+            </button>
+            <button
+              onClick={() => {
+                setShowSettings(true);
+                setShowMenu(false);
+              }}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+              设置
+            </button>
+            <div className="border-t border-white/20 my-2" />
+            <button
+              onClick={onReturnToMenu}
+              className="w-full flex items-center gap-3 text-white hover:bg-white/10 px-4 py-2 rounded transition-colors"
+            >
+              <RotateCcw className="w-5 h-5" />
+              返回主菜单
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 7. 历史记录 (Modal) */}
-      {showHistory && (
-        <div className="absolute inset-0 z-[60] bg-black/95 flex flex-col p-8 animate-in fade-in duration-200">
-          <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-            <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-200">
-              <History /> 历史记录
-            </h2>
-            <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-white/10 text-white transition-colors rounded-full">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-6 pr-4 scrollbar-thin scrollbar-thumb-gray-600">
-            {historyList.map((log, i) => (
-              <div key={i} className="flex flex-col gap-1 border-b border-gray-800 pb-4">
-                {log?.name && <span className="text-red-500 font-bold text-sm tracking-wider">{log.name}</span>}
-                <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{log?.text}</p>
-              </div>
-            ))}
-             <div className="flex flex-col gap-1 opacity-50">
-                {characterName && <span className="text-red-500 font-bold text-sm tracking-wider">{characterName}</span>}
-                <p className="text-gray-400 leading-relaxed text-lg whitespace-pre-wrap">{currentNode.text}</p>
-              </div>
-          </div>
-        </div>
+      {/* 自动播放指示器 */}
+      {isAutoPlay && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute top-4 right-4 z-30 bg-blue-500/80 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center gap-2"
+        >
+          <SkipForward className="w-4 h-4" />
+          自动播放中
+        </motion.div>
       )}
 
-      {/* 8. 其他界面 */}
-      {showSaveMenu && <SaveLoadMenu mode="save" saves={saveSystem.getAllSaves()} onClose={() => setShowSaveMenu(false)} onSave={handleSave} onDelete={handleDeleteSave} />}
-      {showLoadMenu && <SaveLoadMenu mode="load" saves={saveSystem.getAllSaves()} onClose={() => setShowLoadMenu(false)} onLoad={handleLoad} onDelete={handleDeleteSave} />}
-      {showGallery && <Gallery unlockedCGs={gameState.unlockedCGs} onClose={() => setShowGallery(false)} />}
-      {showSettings && <SettingsMenu settings={settings} onClose={() => setShowSettings(false)} onSave={handleSettingsSave} />}
-      
-      {/* 样式定义 */}
-      <style>{`
-        .menu-btn {
-          @apply w-full flex items-center gap-3 text-white/90 hover:text-white hover:bg-white/10 px-4 py-3 rounded transition-all text-left text-sm font-medium;
-        }
-      `}</style>
+      {/* 成就通知 */}
+      <AchievementToast
+        achievement={newAchievement}
+        onClose={() => setNewAchievement(null)}
+      />
+
+      {/* 存档菜单 */}
+      {showSaveMenu && (
+        <SaveLoadMenu
+          mode="save"
+          saves={saveSystem.getAllSaves()}
+          onClose={() => setShowSaveMenu(false)}
+          onSave={handleSave}
+          onDelete={handleDeleteSave}
+        />
+      )}
+
+      {/* 读档菜单 */}
+      {showLoadMenu && (
+        <SaveLoadMenu
+          mode="load"
+          saves={saveSystem.getAllSaves()}
+          onClose={() => setShowLoadMenu(false)}
+          onLoad={handleLoad}
+          onDelete={handleDeleteSave}
+        />
+      )}
+
+      {/* 画廊 */}
+      {showGallery && (
+        <Gallery unlockedCGs={gameState.unlockedCGs} onClose={() => setShowGallery(false)} />
+      )}
+
+      {/* 设置 */}
+      {showSettings && (
+        <SettingsMenu
+          settings={settings}
+          onClose={() => setShowSettings(false)}
+          onSave={handleSettingsSave}
+        />
+      )}
+
+      {/* 对话历史 */}
+      {showHistory && (
+        <DialogueHistoryPanel
+          history={gameState.dialogueHistory}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {/* 成就面板 */}
+      {showAchievements && (
+        <AchievementsPanel
+          allAchievements={achievements}
+          unlockedAchievements={gameState.achievements}
+          onClose={() => setShowAchievements(false)}
+        />
+      )}
     </div>
   );
 };

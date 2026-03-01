@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Save, Trash2 } from 'lucide-react';
+import { X, Save, Trash2, BookOpen } from 'lucide-react';
 import { SaveData } from '../types/game';
 
 interface SaveLoadMenuProps {
@@ -107,6 +107,13 @@ export const SaveLoadMenu: React.FC<SaveLoadMenuProps> = ({
                   ) : (
                     <>
                       <div className="pt-6 space-y-2">
+                        {/* 章节显示 */}
+                        {save.chapter && (
+                          <div className="flex items-center gap-2 text-blue-400 text-sm mb-1">
+                            <BookOpen className="w-4 h-4" />
+                            <span>{save.chapter}</span>
+                          </div>
+                        )}
                         <div className="text-white font-medium truncate">
                           {save.screenshot}
                         </div>
