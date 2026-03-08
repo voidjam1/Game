@@ -1,6 +1,16 @@
 // 恐怖题材游戏故事数据
 import { DialogueNode, Character, Achievement } from '../types/game';
 
+// 导入主角头像
+import avatar1 from 'figma:asset/037df75bb75d22860402eca7435c4dc0de083770.png'; // 闭眼
+import avatar2 from 'figma:asset/83aa71ee9604576b9184baa8625b9f1ef8610b99.png'; // 普通
+import avatar3 from 'figma:asset/b536f9201a19600e5f917b4016cc646efb3acf24.png'; // 故障效果
+import avatar4 from 'figma:asset/1c243381d764b5c16f302ca0376643c3d472f195.png'; // 半闭眼
+import avatar5 from 'figma:asset/0089b80298155997481108ab3c034f8eb8cf99bd.png'; // 笑容
+import avatar6 from 'figma:asset/a0096c6618d5a769eeee70a2f97dba2d24219d6a.png'; // 向上看
+import avatar7 from 'figma:asset/ba0e38e0eb25bf5deed1b14b5d4db3aef79fa991.png'; // 说话
+import avatar8 from 'figma:asset/3a61f31ad3acc468c409c60ef4385747cfd6a8da.png'; // 侧视
+
 // 角色定义（添加头像）
 export const characters: Record<string, Character> = {
   narrator: {
@@ -12,7 +22,7 @@ export const characters: Record<string, Character> = {
     id: 'wanhui',
     name: '万辉',
     sprite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', // 头像
+    avatar: avatar2, // 默认使用普通表情
   },
   voice: {
     id: 'voice',
@@ -23,19 +33,31 @@ export const characters: Record<string, Character> = {
     id: 'yinyu',
     name: '殷玉',
     sprite: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop', // 头像
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop', // 头像（待替换为自定义）
   },
   mirror_girl: {
     id: 'mirror_girl',
     name: '镜中少女',
     sprite: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
-    avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&h=100&fit=crop', // 头像
+    avatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&h=100&fit=crop', // 头像（待替换为自定义）
   },
   phone_voice: {
     id: 'phone_voice',
     name: '电话里的声音',
     sprite: '',
   },
+};
+
+// 主角不同表情的头像映射（供后续使用）
+export const wanhuiAvatars = {
+  closed: avatar1,      // 闭眼
+  normal: avatar2,      // 普通
+  glitch: avatar3,      // 故障效果
+  halfClosed: avatar4,  // 半闭眼/疑惑
+  smile: avatar5,       // 笑容
+  lookup: avatar6,      // 向上看
+  talking: avatar7,     // 说话
+  side: avatar8,        // 侧视/思考
 };
 
 // 成就定义
