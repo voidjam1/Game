@@ -1,15 +1,15 @@
 // 恐怖题材游戏故事数据
 import { DialogueNode, Character, Achievement } from '../types/game';
 
-// 导入主角头像
-import avatar1 from 'figma:asset/037df75bb75d22860402eca7435c4dc0de083770.png'; // 闭眼
-import avatar2 from 'figma:asset/83aa71ee9604576b9184baa8625b9f1ef8610b99.png'; // 普通
-import avatar3 from 'figma:asset/b536f9201a19600e5f917b4016cc646efb3acf24.png'; // 故障效果
-import avatar4 from 'figma:asset/1c243381d764b5c16f302ca0376643c3d472f195.png'; // 半闭眼
-import avatar5 from 'figma:asset/0089b80298155997481108ab3c034f8eb8cf99bd.png'; // 笑容
-import avatar6 from 'figma:asset/a0096c6618d5a769eeee70a2f97dba2d24219d6a.png'; // 向上看
-import avatar7 from 'figma:asset/ba0e38e0eb25bf5deed1b14b5d4db3aef79fa991.png'; // 说话
-import avatar8 from 'figma:asset/3a61f31ad3acc468c409c60ef4385747cfd6a8da.png'; // 侧视
+// 主角头像 - 暂时使用占位符，等待上传实际图片
+const avatar1 = 'https://via.placeholder.com/100/000000/FFFFFF?text=1'; // 闭眼
+const avatar2 = 'https://via.placeholder.com/100/000000/FFFFFF?text=2'; // 普通
+const avatar3 = 'https://via.placeholder.com/100/000000/FFFFFF?text=3'; // 故障效果
+const avatar4 = 'https://via.placeholder.com/100/000000/FFFFFF?text=4'; // 半闭眼
+const avatar5 = 'https://via.placeholder.com/100/000000/FFFFFF?text=5'; // 笑容
+const avatar6 = 'https://via.placeholder.com/100/000000/FFFFFF?text=6'; // 向上看
+const avatar7 = 'https://via.placeholder.com/100/000000/FFFFFF?text=7'; // 说话
+const avatar8 = 'https://via.placeholder.com/100/000000/FFFFFF?text=8'; // 侧视
 
 // 角色定义（添加头像）
 export const characters: Record<string, Character> = {
@@ -560,7 +560,7 @@ export const storyNodes: Record<string, DialogueNode> = {
     type: 'dialogue',
     chapter: 'ep1',
     character: 'narrator',
-    text: '你开始沿着走廊前进。\n身后传来了奇怪的声音...像是有人在跟着你。',
+    text: '你开始沿着走廊前进。\n身后传来了奇怪的声音...像是有人在跟��你。',
     next: 'floor_9_choice_1',
   },
 
